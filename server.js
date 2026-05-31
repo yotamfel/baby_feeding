@@ -3,47 +3,90 @@ const fs = require('fs');
 const path = require('path');
 
 const app = express();
-const DATA_FILE = path.join(__dirname, 'feedings.json');
-
-function readData() {
-  if (!fs.existsSync(DATA_FILE)) return [];
-  return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
-}
-
-function writeData(data) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
-}
-
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.get('/api/feedings', (req, res) => {
-  const data = readData().sort((a, b) =>
-    (b.date + b.time).localeCompare(a.date + a.time)
-  );
-  res.json(data);
+// ── Storage ──────────────────────────────────────────────────────────────────
+
+const DATA_FILE = path.join(__dirname, 'feedings.json');
+let pg = null;
+
+async function initStorage() {
+  if (process.env.DATABASE_URL) {
+    const { Pool } = require('pg');
+    pg = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+    await pg.query(`
+      CREATE TABLE IF NOT EXISTS feedings (
+        id BIGINT PRIMARY KEY,
+        date TEXT NOT NULL,
+        time TEXT NOT NULL,
+        amount_eaten INTEGER NOT NULL,
+        amount_added INTEGER NOT NULL
+      )
+    `);
+    console.log('Using PostgreSQL');
+  } else {
+    console.log('Using local JSON file');
+  }
+}
+
+async function getAll() {
+  if (pg) {
+    const { rows } = await pg.query('SELECT * FROM feedings ORDER BY date DESC, time DESC');
+    return rows;
+  }
+  if (!fs.existsSync(DATA_FILE)) return [];
+  return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'))
+    .sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
+}
+
+async function insert(entry) {
+  if (pg) {
+    await pg.query(
+      'INSERT INTO feedings (id, date, time, amount_eaten, amount_added) VALUES ($1, $2, $3, $4, $5)',
+      [entry.id, entry.date, entry.time, entry.amount_eaten, entry.amount_added]
+    );
+    return;
+  }
+  const data = fs.existsSync(DATA_FILE) ? JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')) : [];
+  data.push(entry);
+  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+}
+
+async function remove(id) {
+  if (pg) {
+    await pg.query('DELETE FROM feedings WHERE id = $1', [id]);
+    return;
+  }
+  const data = fs.existsSync(DATA_FILE) ? JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')) : [];
+  fs.writeFileSync(DATA_FILE, JSON.stringify(data.filter(f => f.id !== id), null, 2));
+}
+
+// ── Routes ───────────────────────────────────────────────────────────────────
+
+app.get('/api/feedings', async (req, res) => {
+  res.json(await getAll());
 });
 
-app.post('/api/feedings', (req, res) => {
+app.post('/api/feedings', async (req, res) => {
   const { date, time, amount_eaten, amount_added } = req.body;
   if (!date || !time || amount_eaten == null || amount_added == null) {
     return res.status(400).json({ error: 'All fields are required' });
   }
-  const data = readData();
   const entry = { id: Date.now(), date, time, amount_eaten, amount_added };
-  data.push(entry);
-  writeData(data);
+  await insert(entry);
   res.json({ id: entry.id });
 });
 
-app.delete('/api/feedings/:id', (req, res) => {
-  writeData(readData().filter(f => f.id !== Number(req.params.id)));
+app.delete('/api/feedings/:id', async (req, res) => {
+  await remove(Number(req.params.id));
   res.json({ ok: true });
 });
 
-app.get('/report', (req, res) => {
+app.get('/report', async (req, res) => {
   const { from, to } = req.query;
-  let data = readData().sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+  let data = await getAll();
+  data = data.sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
   if (from) data = data.filter(f => f.date >= from);
   if (to)   data = data.filter(f => f.date <= to);
 
@@ -123,5 +166,9 @@ app.get('/report', (req, res) => {
   res.send(html);
 });
 
-const PORT = 3000;
-app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
+// ── Start ────────────────────────────────────────────────────────────────────
+
+const PORT = process.env.PORT || 3000;
+initStorage().then(() => {
+  app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
+});
