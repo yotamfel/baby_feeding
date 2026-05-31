@@ -12,9 +12,29 @@
   <link rel="apple-touch-icon" href="/icon.svg">
 </head>
 <body>
+
+  <!-- Session modal -->
+  <div id="session-modal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-icon">🍼</div>
+      <h1>Baby Feeding Tracker</h1>
+      <p>Enter your session code to sync with your partner, or create a new one.</p>
+      <div class="modal-join">
+        <input type="text" id="session-input" placeholder="e.g. XK7M2P" maxlength="10" autocomplete="off" autocapitalize="characters" />
+        <button class="btn btn-primary" onclick="joinSession()">Join</button>
+      </div>
+      <div class="modal-divider"><span>or</span></div>
+      <button class="btn btn-outline" onclick="createSession()">Create new session</button>
+    </div>
+  </div>
+
   <header>
     <h1>🍼 Baby Feeding Tracker</h1>
-    <p>Track every feeding, one bottle at a time</p>
+    <div id="session-bar" class="session-bar">
+      <span class="session-label">Session: <strong id="session-code-display"></strong></span>
+      <button class="btn-pill" id="copy-btn" onclick="copyCode()">Copy Code</button>
+      <button class="btn-pill btn-pill-danger" onclick="logout()">Log Out</button>
+    </div>
   </header>
 
   <div class="container">

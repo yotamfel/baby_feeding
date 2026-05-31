@@ -18,33 +18,39 @@ async function initStorage() {
     await pg.query(`
       CREATE TABLE IF NOT EXISTS feedings (
         id BIGINT PRIMARY KEY,
+        session_id TEXT NOT NULL DEFAULT 'default',
         date TEXT NOT NULL,
         time TEXT NOT NULL,
         amount_eaten INTEGER NOT NULL,
         amount_added INTEGER NOT NULL
       )
     `);
+    await pg.query(`ALTER TABLE feedings ADD COLUMN IF NOT EXISTS session_id TEXT NOT NULL DEFAULT 'default'`);
     console.log('Using PostgreSQL');
   } else {
     console.log('Using local JSON file');
   }
 }
 
-async function getAll() {
+async function getAll(sessionId) {
   if (pg) {
-    const { rows } = await pg.query('SELECT * FROM feedings ORDER BY date DESC, time DESC');
+    const { rows } = await pg.query(
+      'SELECT * FROM feedings WHERE session_id = $1 ORDER BY date DESC, time DESC',
+      [sessionId]
+    );
     return rows;
   }
-  if (!fs.existsSync(DATA_FILE)) return [];
-  return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'))
+  const all = fs.existsSync(DATA_FILE) ? JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')) : [];
+  return all
+    .filter(f => (f.session_id || 'default') === sessionId)
     .sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
 }
 
 async function insert(entry) {
   if (pg) {
     await pg.query(
-      'INSERT INTO feedings (id, date, time, amount_eaten, amount_added) VALUES ($1, $2, $3, $4, $5)',
-      [entry.id, entry.date, entry.time, entry.amount_eaten, entry.amount_added]
+      'INSERT INTO feedings (id, session_id, date, time, amount_eaten, amount_added) VALUES ($1, $2, $3, $4, $5, $6)',
+      [entry.id, entry.session_id, entry.date, entry.time, entry.amount_eaten, entry.amount_added]
     );
     return;
   }
@@ -53,19 +59,26 @@ async function insert(entry) {
   fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
 }
 
-async function remove(id) {
+async function remove(id, sessionId) {
   if (pg) {
-    await pg.query('DELETE FROM feedings WHERE id = $1', [id]);
+    await pg.query('DELETE FROM feedings WHERE id = $1 AND session_id = $2', [id, sessionId]);
     return;
   }
   const data = fs.existsSync(DATA_FILE) ? JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')) : [];
-  fs.writeFileSync(DATA_FILE, JSON.stringify(data.filter(f => f.id !== id), null, 2));
+  fs.writeFileSync(DATA_FILE, JSON.stringify(
+    data.filter(f => !(f.id === id && (f.session_id || 'default') === sessionId)),
+    null, 2
+  ));
 }
 
 // ── Routes ───────────────────────────────────────────────────────────────────
 
+function getSession(req) {
+  return (req.headers['x-session-id'] || req.query.session || 'default').toString().trim().toUpperCase();
+}
+
 app.get('/api/feedings', async (req, res) => {
-  res.json(await getAll());
+  res.json(await getAll(getSession(req)));
 });
 
 app.post('/api/feedings', async (req, res) => {
@@ -73,19 +86,20 @@ app.post('/api/feedings', async (req, res) => {
   if (!date || !time || amount_eaten == null || amount_added == null) {
     return res.status(400).json({ error: 'All fields are required' });
   }
-  const entry = { id: Date.now(), date, time, amount_eaten, amount_added };
+  const entry = { id: Date.now(), session_id: getSession(req), date, time, amount_eaten, amount_added };
   await insert(entry);
   res.json({ id: entry.id });
 });
 
 app.delete('/api/feedings/:id', async (req, res) => {
-  await remove(Number(req.params.id));
+  await remove(Number(req.params.id), getSession(req));
   res.json({ ok: true });
 });
 
 app.get('/report', async (req, res) => {
+  const sessionId = getSession(req);
   const { from, to } = req.query;
-  let data = await getAll();
+  let data = await getAll(sessionId);
   data = data.sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
   if (from) data = data.filter(f => f.date >= from);
   if (to)   data = data.filter(f => f.date <= to);

@@ -19,25 +19,146 @@ body {
   min-height: 100vh;
 }
 
+/* ── Modal ─────────────────────────────────────────────────────────────────── */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(135deg, #5b8dee 0%, #8c6dea 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
+}
+
+.modal-card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 36px 32px;
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}
+
+.modal-icon { font-size: 3rem; margin-bottom: 12px; }
+
+.modal-card h1 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 10px;
+}
+
+.modal-card p {
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+
+.modal-join {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.modal-join input {
+  flex: 1;
+  padding: 11px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text);
+  text-align: center;
+}
+
+.modal-join input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(91,141,238,0.15);
+}
+
+.modal-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 0.8rem;
+  margin: 16px 0;
+}
+.modal-divider::before, .modal-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.btn-outline {
+  width: 100%;
+  background: #fff;
+  color: var(--primary);
+  border: 1.5px solid var(--primary);
+}
+.btn-outline:hover { background: #f0f4ff; }
+
+/* ── Header ────────────────────────────────────────────────────────────────── */
+
 header {
   background: linear-gradient(135deg, #5b8dee 0%, #8c6dea 100%);
-  padding: 36px 24px;
-  text-align: center;
+  padding: 20px 24px;
   color: #fff;
   box-shadow: 0 2px 16px rgba(91, 141, 238, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 header h1 {
-  font-size: 1.9rem;
+  font-size: 1.4rem;
   font-weight: 700;
   letter-spacing: -0.3px;
 }
 
-header p {
-  margin-top: 8px;
-  opacity: 0.85;
+.session-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.session-label {
+  font-size: 0.85rem;
+  opacity: 0.9;
+}
+
+.session-label strong {
+  letter-spacing: 2px;
   font-size: 0.95rem;
 }
+
+.btn-pill {
+  background: rgba(255,255,255,0.2);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.4);
+  border-radius: 20px;
+  padding: 5px 14px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-pill:hover { background: rgba(255,255,255,0.3); }
+.btn-pill-danger { background: rgba(244,106,106,0.3); border-color: rgba(244,106,106,0.5); }
+.btn-pill-danger:hover { background: rgba(244,106,106,0.5); }
+
+/* ── Layout ────────────────────────────────────────────────────────────────── */
 
 .container {
   max-width: 780px;
@@ -208,7 +329,9 @@ tbody tr:hover { background: #f8f9ff; }
 }
 
 @media (max-width: 520px) {
+  header { flex-direction: column; align-items: flex-start; }
   .form-row, .export-row { flex-direction: column; }
   .export-buttons { width: 100%; flex-direction: column; }
   .btn { width: 100%; text-align: center; }
+  .modal-card { padding: 28px 20px; }
 }
