@@ -1,0 +1,15 @@
+{
+  "name": "Baby Feeding Tracker",
+  "short_name": "Feeding",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#5b8dee",
+  "theme_color": "#5b8dee",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
