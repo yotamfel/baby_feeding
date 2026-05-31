@@ -22,17 +22,27 @@ async function deleteFeeding(id) {
   loadFeedings();
 }
 
+async function downloadCsv(url) {
+  const res = await fetch(url);
+  const blob = await res.blob();
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'feedings.csv';
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
 function exportData() {
   const from = document.getElementById('export-from').value;
   const to = document.getElementById('export-to').value;
   const params = new URLSearchParams();
   if (from) params.set('from', from);
   if (to) params.set('to', to);
-  window.location.href = `/api/export?${params}`;
+  downloadCsv(`/api/export?${params}`);
 }
 
 function exportAll() {
-  window.location.href = '/api/export';
+  downloadCsv('/api/export');
 }
 
 document.getElementById('feeding-form').addEventListener('submit', async (e) => {
