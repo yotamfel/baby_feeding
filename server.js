@@ -35,10 +35,12 @@ async function initStorage() {
         date TEXT NOT NULL,
         time TEXT NOT NULL,
         amount_eaten INTEGER NOT NULL,
-        amount_added INTEGER NOT NULL
+        amount_added INTEGER NOT NULL,
+        notes TEXT
       )
     `);
     await pg.query(`ALTER TABLE feedings ADD COLUMN IF NOT EXISTS session_id TEXT NOT NULL DEFAULT 'default'`);
+    await pg.query(`ALTER TABLE feedings ADD COLUMN IF NOT EXISTS notes TEXT`);
     console.log('Using PostgreSQL');
   } else {
     console.log('Using local JSON file');
@@ -92,8 +94,8 @@ async function getAll(sessionName) {
 async function insert(entry) {
   if (pg) {
     await pg.query(
-      'INSERT INTO feedings (id, session_id, date, time, amount_eaten, amount_added) VALUES ($1, $2, $3, $4, $5, $6)',
-      [entry.id, entry.session_id, entry.date, entry.time, entry.amount_eaten, entry.amount_added]
+      'INSERT INTO feedings (id, session_id, date, time, amount_eaten, amount_added, notes) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+      [entry.id, entry.session_id, entry.date, entry.time, entry.amount_eaten, entry.amount_added, entry.notes || null]
     );
     return;
   }
@@ -157,7 +159,8 @@ app.post('/api/feedings', requireSession, async (req, res) => {
   if (!date || !time || amount_eaten == null || amount_added == null) {
     return res.status(400).json({ error: 'All fields are required' });
   }
-  const entry = { id: Date.now(), session_id: req.sessionName, date, time, amount_eaten, amount_added };
+  const { notes } = req.body;
+  const entry = { id: Date.now(), session_id: req.sessionName, date, time, amount_eaten, amount_added, notes: notes || null };
   await insert(entry);
   res.json({ id: entry.id });
 });

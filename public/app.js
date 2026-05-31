@@ -80,6 +80,7 @@ async function loadFeedings() {
       <td>${f.time}</td>
       <td><span class="badge badge-ate">${f.amount_eaten} ml</span></td>
       <td><span class="badge badge-added">${f.amount_added} ml</span></td>
+      <td class="notes-cell">${f.notes || ''}</td>
       <td><button class="delete-btn" onclick="deleteFeeding(${f.id})">✕</button></td>
     </tr>
   `).join('');
@@ -111,6 +112,7 @@ document.getElementById('feeding-form').addEventListener('submit', async (e) => 
     time: document.getElementById('time').value,
     amount_eaten: Number(document.getElementById('amount_eaten').value),
     amount_added: Number(document.getElementById('amount_added').value),
+    notes: document.getElementById('notes').value.trim() || null,
   };
   await fetch('/api/feedings', {
     method: 'POST',

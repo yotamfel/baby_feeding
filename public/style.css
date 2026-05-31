@@ -312,6 +312,13 @@ tbody tr:hover { background: #f8f9ff; }
 }
 .delete-btn:hover { background: #fff0f0; }
 
+.notes-cell {
+  color: var(--muted);
+  font-style: italic;
+  font-size: 0.85rem;
+  max-width: 200px;
+}
+
 .empty-state {
   text-align: center;
   padding: 40px 0;
