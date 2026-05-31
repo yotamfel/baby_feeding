@@ -169,6 +169,14 @@ app.get('/report', async (req, res) => {
 // ── Start ────────────────────────────────────────────────────────────────────
 
 const PORT = process.env.PORT || 3000;
-initStorage().then(() => {
-  app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
-});
+
+initStorage()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  })
+  .catch(err => {
+    console.error('Failed to start server:', err);
+    process.exit(1);
+  });
