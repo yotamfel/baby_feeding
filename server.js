@@ -41,5 +41,19 @@ app.delete('/api/feedings/:id', (req, res) => {
   res.json({ ok: true });
 });
 
+app.get('/api/export', (req, res) => {
+  const { from, to } = req.query;
+  let data = readData().sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+  if (from) data = data.filter(f => f.date >= from);
+  if (to)   data = data.filter(f => f.date <= to);
+  const csv = [
+    'Date,Time,Ate from bottle (ml),Added to feeding (ml)',
+    ...data.map(f => `${f.date},${f.time},${f.amount_eaten},${f.amount_added}`)
+  ].join('\r\n');
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', 'attachment; filename="feedings.csv"');
+  res.send(csv);
+});
+
 const PORT = 3000;
 app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
