@@ -1,62 +1,68 @@
 // ── Session ───────────────────────────────────────────────────────────────────
 
-const SESSION_KEY = 'feedingSessionId';
+const NAME_KEY = 'feedingSessionName';
+const PASS_KEY = 'feedingSessionPassword';
 
-function getSessionId() {
-  return localStorage.getItem(SESSION_KEY);
-}
+function getSessionName() { return localStorage.getItem(NAME_KEY); }
+function getSessionPassword() { return localStorage.getItem(PASS_KEY); }
 
 function sessionHeaders() {
-  return { 'x-session-id': getSessionId() };
+  return {
+    'x-session-id': getSessionName(),
+    'x-session-password': getSessionPassword(),
+  };
 }
 
-function generateCode() {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+async function startSession() {
+  const name = document.getElementById('session-name').value.trim();
+  const password = document.getElementById('session-password').value;
+  const errorEl = document.getElementById('session-error');
+
+  errorEl.textContent = '';
+
+  if (!name || !password) {
+    errorEl.textContent = 'Please enter both a name and a password.';
+    return;
+  }
+
+  const res = await fetch('/api/session', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, password }),
+  });
+  const data = await res.json();
+
+  if (!res.ok) {
+    errorEl.textContent = data.error || 'Something went wrong.';
+    return;
+  }
+
+  localStorage.setItem(NAME_KEY, name);
+  localStorage.setItem(PASS_KEY, password);
+  applySession(name);
 }
 
-function applySession(id) {
-  localStorage.setItem(SESSION_KEY, id);
-  document.getElementById('session-code-display').textContent = id;
+function applySession(name) {
+  document.getElementById('session-name-display').textContent = name;
   document.getElementById('session-modal').style.display = 'none';
   document.getElementById('session-bar').style.display = 'flex';
   document.getElementById('date').valueAsDate = new Date();
   loadFeedings();
 }
 
-function createSession() {
-  applySession(generateCode());
-}
-
-function joinSession() {
-  const code = document.getElementById('session-input').value.trim().toUpperCase();
-  if (code.length < 4) {
-    document.getElementById('session-input').focus();
-    return;
-  }
-  applySession(code);
-}
-
-function copyCode() {
-  navigator.clipboard.writeText(getSessionId()).then(() => {
-    const btn = document.getElementById('copy-btn');
-    btn.textContent = 'Copied!';
-    setTimeout(() => btn.textContent = 'Copy Code', 2000);
-  });
-}
-
 function logout() {
-  localStorage.removeItem(SESSION_KEY);
+  localStorage.removeItem(NAME_KEY);
+  localStorage.removeItem(PASS_KEY);
   document.getElementById('session-modal').style.display = 'flex';
   document.getElementById('session-bar').style.display = 'none';
   document.querySelector('#feedings-table tbody').innerHTML = '';
-  document.getElementById('session-input').value = '';
+  document.getElementById('session-name').value = '';
+  document.getElementById('session-password').value = '';
+  document.getElementById('session-error').textContent = '';
 }
 
-// Allow pressing Enter in the session input
-document.getElementById('session-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') joinSession();
-});
+document.getElementById('session-name').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('session-password').focus(); });
+document.getElementById('session-password').addEventListener('keydown', e => { if (e.key === 'Enter') startSession(); });
 
 // ── Feedings ──────────────────────────────────────────────────────────────────
 
@@ -87,14 +93,15 @@ async function deleteFeeding(id) {
 function exportData() {
   const from = document.getElementById('export-from').value;
   const to = document.getElementById('export-to').value;
-  const params = new URLSearchParams({ session: getSessionId() });
+  const params = new URLSearchParams({ session: getSessionName(), password: getSessionPassword() });
   if (from) params.set('from', from);
   if (to) params.set('to', to);
   window.open(`/report?${params}`, '_blank');
 }
 
 function exportAll() {
-  window.open(`/report?session=${getSessionId()}`, '_blank');
+  const params = new URLSearchParams({ session: getSessionName(), password: getSessionPassword() });
+  window.open(`/report?${params}`, '_blank');
 }
 
 document.getElementById('feeding-form').addEventListener('submit', async (e) => {
@@ -117,9 +124,9 @@ document.getElementById('feeding-form').addEventListener('submit', async (e) => 
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 
-const saved = getSessionId();
-if (saved) {
-  applySession(saved);
+const savedName = getSessionName();
+if (savedName) {
+  applySession(savedName);
 } else {
   document.getElementById('session-modal').style.display = 'flex';
   document.getElementById('session-bar').style.display = 'none';

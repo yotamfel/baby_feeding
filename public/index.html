@@ -18,21 +18,21 @@
     <div class="modal-card">
       <div class="modal-icon">🍼</div>
       <h1>Baby Feeding Tracker</h1>
-      <p>Enter your session code to sync with your partner, or create a new one.</p>
-      <div class="modal-join">
-        <input type="text" id="session-input" placeholder="e.g. XK7M2P" maxlength="10" autocomplete="off" autocapitalize="characters" />
-        <button class="btn btn-primary" onclick="joinSession()">Join</button>
+      <p>Choose a session name and password.<br>Share both with your partner to sync data.</p>
+      <div class="modal-fields">
+        <input type="text" id="session-name" placeholder="Session name (e.g. Baby Lior)" autocomplete="off" />
+        <input type="password" id="session-password" placeholder="Password" autocomplete="off" />
       </div>
-      <div class="modal-divider"><span>or</span></div>
-      <button class="btn btn-outline" onclick="createSession()">Create new session</button>
+      <button class="btn btn-primary btn-full" onclick="startSession()">Start</button>
+      <p id="session-error" class="session-error"></p>
+      <p class="modal-hint">First time? This creates your session.<br>Returning? Enter the same name &amp; password.</p>
     </div>
   </div>
 
   <header>
     <h1>🍼 Baby Feeding Tracker</h1>
     <div id="session-bar" class="session-bar">
-      <span class="session-label">Session: <strong id="session-code-display"></strong></span>
-      <button class="btn-pill" id="copy-btn" onclick="copyCode()">Copy Code</button>
+      <span class="session-label">Session: <strong id="session-name-display"></strong></span>
       <button class="btn-pill btn-pill-danger" onclick="logout()">Log Out</button>
     </div>
   </header>

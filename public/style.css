@@ -51,60 +51,52 @@ body {
   margin-bottom: 10px;
 }
 
-.modal-card p {
+.modal-card > p {
   color: var(--muted);
   font-size: 0.9rem;
   line-height: 1.5;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
-.modal-join {
+.modal-fields {
   display: flex;
-  gap: 8px;
-  margin-bottom: 6px;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 14px;
 }
 
-.modal-join input {
-  flex: 1;
-  padding: 11px 14px;
+.modal-fields input {
+  padding: 12px 14px;
   border: 1.5px solid var(--border);
   border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
-  letter-spacing: 2px;
-  text-transform: uppercase;
+  font-size: 0.97rem;
   color: var(--text);
-  text-align: center;
+  text-align: left;
+  width: 100%;
 }
 
-.modal-join input:focus {
+.modal-fields input:focus {
   outline: none;
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(91,141,238,0.15);
 }
 
-.modal-divider {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--muted);
-  font-size: 0.8rem;
-  margin: 16px 0;
-}
-.modal-divider::before, .modal-divider::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--border);
+.btn-full { width: 100%; }
+
+.session-error {
+  color: #e53e3e;
+  font-size: 0.85rem;
+  font-weight: 600;
+  min-height: 20px;
+  margin-top: 10px;
 }
 
-.btn-outline {
-  width: 100%;
-  background: #fff;
-  color: var(--primary);
-  border: 1.5px solid var(--primary);
+.modal-hint {
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.5;
+  margin-top: 16px;
 }
-.btn-outline:hover { background: #f0f4ff; }
 
 /* ── Header ────────────────────────────────────────────────────────────────── */
 
@@ -139,7 +131,6 @@ header h1 {
 }
 
 .session-label strong {
-  letter-spacing: 2px;
   font-size: 0.95rem;
 }
 

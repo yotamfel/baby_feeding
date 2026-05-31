@@ -1,6 +1,7 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
 const app = express();
 app.use(express.json());
@@ -9,12 +10,24 @@ app.use(express.static(path.join(__dirname, 'public')));
 // ── Storage ──────────────────────────────────────────────────────────────────
 
 const DATA_FILE = path.join(__dirname, 'feedings.json');
+const SESSIONS_FILE = path.join(__dirname, 'sessions.json');
 let pg = null;
+
+function hashPassword(password, salt) {
+  return crypto.createHash('sha256').update(password + salt).digest('hex');
+}
 
 async function initStorage() {
   if (process.env.DATABASE_URL) {
     const { Pool } = require('pg');
     pg = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+    await pg.query(`
+      CREATE TABLE IF NOT EXISTS sessions (
+        name TEXT PRIMARY KEY,
+        password_hash TEXT NOT NULL,
+        salt TEXT NOT NULL
+      )
+    `);
     await pg.query(`
       CREATE TABLE IF NOT EXISTS feedings (
         id BIGINT PRIMARY KEY,
@@ -32,17 +45,47 @@ async function initStorage() {
   }
 }
 
-async function getAll(sessionId) {
+// Sessions
+async function findSession(name) {
+  if (pg) {
+    const { rows } = await pg.query('SELECT * FROM sessions WHERE name = $1', [name]);
+    return rows[0] || null;
+  }
+  const sessions = fs.existsSync(SESSIONS_FILE) ? JSON.parse(fs.readFileSync(SESSIONS_FILE, 'utf8')) : [];
+  return sessions.find(s => s.name === name) || null;
+}
+
+async function createSession(name, password) {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const password_hash = hashPassword(password, salt);
+  if (pg) {
+    await pg.query('INSERT INTO sessions (name, password_hash, salt) VALUES ($1, $2, $3)', [name, password_hash, salt]);
+    return;
+  }
+  const sessions = fs.existsSync(SESSIONS_FILE) ? JSON.parse(fs.readFileSync(SESSIONS_FILE, 'utf8')) : [];
+  sessions.push({ name, password_hash, salt });
+  fs.writeFileSync(SESSIONS_FILE, JSON.stringify(sessions, null, 2));
+}
+
+async function checkPassword(name, password) {
+  const session = await findSession(name);
+  if (!session) return { ok: false, error: 'Session not found' };
+  if (hashPassword(password, session.salt) !== session.password_hash) return { ok: false, error: 'Wrong password' };
+  return { ok: true };
+}
+
+// Feedings
+async function getAll(sessionName) {
   if (pg) {
     const { rows } = await pg.query(
       'SELECT * FROM feedings WHERE session_id = $1 ORDER BY date DESC, time DESC',
-      [sessionId]
+      [sessionName]
     );
     return rows;
   }
   const all = fs.existsSync(DATA_FILE) ? JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')) : [];
   return all
-    .filter(f => (f.session_id || 'default') === sessionId)
+    .filter(f => (f.session_id || 'default') === sessionName)
     .sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
 }
 
@@ -59,47 +102,79 @@ async function insert(entry) {
   fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
 }
 
-async function remove(id, sessionId) {
+async function remove(id, sessionName) {
   if (pg) {
-    await pg.query('DELETE FROM feedings WHERE id = $1 AND session_id = $2', [id, sessionId]);
+    await pg.query('DELETE FROM feedings WHERE id = $1 AND session_id = $2', [id, sessionName]);
     return;
   }
   const data = fs.existsSync(DATA_FILE) ? JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')) : [];
   fs.writeFileSync(DATA_FILE, JSON.stringify(
-    data.filter(f => !(f.id === id && (f.session_id || 'default') === sessionId)),
+    data.filter(f => !(f.id === id && (f.session_id || 'default') === sessionName)),
     null, 2
   ));
 }
 
-// ── Routes ───────────────────────────────────────────────────────────────────
+// ── Auth middleware ───────────────────────────────────────────────────────────
 
-function getSession(req) {
-  return (req.headers['x-session-id'] || req.query.session || 'default').toString().trim().toUpperCase();
+function getCredentials(req) {
+  return {
+    name: (req.headers['x-session-id'] || req.query.session || '').toString().trim(),
+    password: (req.headers['x-session-password'] || req.query.password || '').toString(),
+  };
 }
 
-app.get('/api/feedings', async (req, res) => {
-  res.json(await getAll(getSession(req)));
+async function requireSession(req, res, next) {
+  const { name, password } = getCredentials(req);
+  if (!name) return res.status(401).json({ error: 'No session' });
+  const result = await checkPassword(name, password);
+  if (!result.ok) return res.status(401).json({ error: result.error });
+  req.sessionName = name;
+  next();
+}
+
+// ── Routes ───────────────────────────────────────────────────────────────────
+
+app.post('/api/session', async (req, res) => {
+  const { name, password } = req.body;
+  if (!name || !password) return res.status(400).json({ error: 'Name and password are required' });
+  const trimmedName = name.trim();
+  const existing = await findSession(trimmedName);
+  if (!existing) {
+    await createSession(trimmedName, password);
+    return res.json({ ok: true, created: true });
+  }
+  const result = await checkPassword(trimmedName, password);
+  if (!result.ok) return res.status(401).json({ error: 'Wrong password' });
+  res.json({ ok: true, created: false });
 });
 
-app.post('/api/feedings', async (req, res) => {
+app.get('/api/feedings', requireSession, async (req, res) => {
+  res.json(await getAll(req.sessionName));
+});
+
+app.post('/api/feedings', requireSession, async (req, res) => {
   const { date, time, amount_eaten, amount_added } = req.body;
   if (!date || !time || amount_eaten == null || amount_added == null) {
     return res.status(400).json({ error: 'All fields are required' });
   }
-  const entry = { id: Date.now(), session_id: getSession(req), date, time, amount_eaten, amount_added };
+  const entry = { id: Date.now(), session_id: req.sessionName, date, time, amount_eaten, amount_added };
   await insert(entry);
   res.json({ id: entry.id });
 });
 
-app.delete('/api/feedings/:id', async (req, res) => {
-  await remove(Number(req.params.id), getSession(req));
+app.delete('/api/feedings/:id', requireSession, async (req, res) => {
+  await remove(Number(req.params.id), req.sessionName);
   res.json({ ok: true });
 });
 
 app.get('/report', async (req, res) => {
-  const sessionId = getSession(req);
+  const { name, password } = getCredentials(req);
+  if (!name) return res.status(401).send('Unauthorized');
+  const result = await checkPassword(name, password);
+  if (!result.ok) return res.status(401).send('Wrong password');
+
   const { from, to } = req.query;
-  let data = await getAll(sessionId);
+  let data = await getAll(name);
   data = data.sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
   if (from) data = data.filter(f => f.date >= from);
   if (to)   data = data.filter(f => f.date <= to);
@@ -186,9 +261,7 @@ const PORT = process.env.PORT || 3000;
 
 initStorage()
   .then(() => {
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-    });
+    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
   })
   .catch(err => {
     console.error('Failed to start server:', err);
