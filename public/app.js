@@ -13,6 +13,15 @@ function sessionHeaders() {
   };
 }
 
+async function apiFetch(url, options = {}) {
+  const res = await fetch(url, options);
+  if (res.status === 401) {
+    logout();
+    return null;
+  }
+  return res;
+}
+
 async function startSession() {
   const name = document.getElementById('session-name').value.trim();
   const password = document.getElementById('session-password').value;
@@ -75,11 +84,12 @@ document.getElementById('session-password').addEventListener('keydown', e => { i
 // ── Feedings ──────────────────────────────────────────────────────────────────
 
 async function loadFeedings() {
-  const res = await fetch('/api/feedings', { headers: sessionHeaders() });
+  const res = await apiFetch('/api/feedings', { headers: sessionHeaders() });
+  if (!res) return;
   const feedings = await res.json();
   const tbody = document.querySelector('#feedings-table tbody');
   if (feedings.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No entries yet. Add the first feeding above.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No entries yet. Add the first feeding above.</td></tr>';
     return;
   }
   tbody.innerHTML = feedings.map(f => `
@@ -118,11 +128,12 @@ async function saveEdit() {
     amount_added: Number(document.getElementById('edit-amount-added').value),
     notes: document.getElementById('edit-notes').value.trim() || null,
   };
-  await fetch(`/api/feedings/${id}`, {
+  const res = await apiFetch(`/api/feedings/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...sessionHeaders() },
     body: JSON.stringify(body),
   });
+  if (!res) return;
   closeEditModal();
   loadFeedings();
 }
@@ -132,7 +143,8 @@ document.getElementById('edit-modal').addEventListener('click', e => {
 });
 
 async function deleteFeeding(id) {
-  await fetch(`/api/feedings/${id}`, { method: 'DELETE', headers: sessionHeaders() });
+  const res = await apiFetch(`/api/feedings/${id}`, { method: 'DELETE', headers: sessionHeaders() });
+  if (!res) return;
   loadFeedings();
 }
 
@@ -159,11 +171,12 @@ document.getElementById('feeding-form').addEventListener('submit', async (e) => 
     amount_added: Number(document.getElementById('amount_added').value),
     notes: document.getElementById('notes').value.trim() || null,
   };
-  await fetch('/api/feedings', {
+  const res = await apiFetch('/api/feedings', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...sessionHeaders() },
     body: JSON.stringify(body),
   });
+  if (!res) return;
   e.target.reset();
   document.getElementById('date').valueAsDate = new Date();
   loadFeedings();
