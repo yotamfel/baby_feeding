@@ -126,7 +126,7 @@ body {
   border-radius: 8px;
   font-size: 0.97rem;
   color: var(--text);
-  text-align: left;
+  text-align: start;
   width: 100%;
 }
 
@@ -386,7 +386,7 @@ thead tr { background: #f8f9fd; }
 
 th {
   padding: 11px 16px;
-  text-align: left;
+  text-align: start;
   font-size: 0.72rem;
   font-weight: 700;
   text-transform: uppercase;

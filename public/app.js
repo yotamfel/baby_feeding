@@ -30,7 +30,7 @@ async function startSession() {
   errorEl.textContent = '';
 
   if (!name || !password) {
-    errorEl.textContent = 'Please enter both a name and a password.';
+    errorEl.textContent = 'נא להזין שם וסיסמא.';
     return;
   }
 
@@ -42,7 +42,7 @@ async function startSession() {
   const data = await res.json();
 
   if (!res.ok) {
-    errorEl.textContent = data.error || 'Something went wrong.';
+    errorEl.textContent = data.error || 'משהו השתבש.';
     return;
   }
 
@@ -73,8 +73,8 @@ function logout() {
 function shareLink() {
   navigator.clipboard.writeText(location.origin).then(() => {
     const btn = document.getElementById('share-btn');
-    btn.textContent = 'Copied!';
-    setTimeout(() => btn.textContent = 'Share App', 2000);
+    btn.textContent = 'הועתק!';
+    setTimeout(() => btn.textContent = 'שתף', 2000);
   });
 }
 
@@ -101,7 +101,7 @@ function renderTable() {
   currentPage = Math.min(currentPage, totalPages);
 
   if (feedingsData.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No entries yet. Add the first feeding above.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-state">אין רשומות עדיין. הוסף את ההאכלה הראשונה למעלה.</td></tr>';
     document.getElementById('pagination').innerHTML = '';
     return;
   }
@@ -122,9 +122,9 @@ function renderTable() {
   `).join('');
 
   document.getElementById('pagination').innerHTML = totalPages <= 1 ? '' : `
-    <button class="page-btn" ${currentPage === totalPages ? 'disabled' : ''} onclick="goToPage(${currentPage + 1})">← Prev</button>
-    <span class="page-info">Page ${currentPage} of ${totalPages}</span>
-    <button class="page-btn" ${currentPage === 1 ? 'disabled' : ''} onclick="goToPage(${currentPage - 1})">Next →</button>
+    <button class="page-btn" ${currentPage === totalPages ? 'disabled' : ''} onclick="goToPage(${currentPage + 1})">הקודם</button>
+    <span class="page-info">עמוד ${currentPage} מתוך ${totalPages}</span>
+    <button class="page-btn" ${currentPage === 1 ? 'disabled' : ''} onclick="goToPage(${currentPage - 1})">הבא</button>
   `;
 }
 

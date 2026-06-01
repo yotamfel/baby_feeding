@@ -69,7 +69,7 @@ const chartDefaults = {
     y: {
       min: 0,
       ticks: { stepSize: 10 },
-      title: { display: true, text: 'ml' }
+      title: { display: true, text: 'מ"ל' }
     }
   }
 };
@@ -99,7 +99,7 @@ function updateChart() {
       data: {
         labels: data.map(f => `${formatDate(f.date)} ${f.time}`),
         datasets: [{
-          label: 'Ate from bottle (ml)',
+          label: 'אכל מהבקבוק (מ"ל)',
           data: eatenValues,
           backgroundColor: BLUE.bg,
           borderColor: BLUE.border,
@@ -110,7 +110,7 @@ function updateChart() {
       options: {
         ...chartDefaults,
         scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, max: getYMax(eatenValues) } },
-        plugins: { ...chartDefaults.plugins, title: { display: true, text: 'Amount Ate Per Feeding' } }
+        plugins: { ...chartDefaults.plugins, title: { display: true, text: 'כמות שאכל לפי האכלה' } }
       }
     });
 
@@ -125,7 +125,7 @@ function updateChart() {
       data: {
         labels,
         datasets: [{
-          label: 'Total ate (ml)',
+          label: 'סה"כ אכל (מ"ל)',
           data: dailyValues,
           backgroundColor: GREEN.bg,
           borderColor: GREEN.border,
@@ -136,7 +136,7 @@ function updateChart() {
       options: {
         ...chartDefaults,
         scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, max: getYMax(dailyValues) } },
-        plugins: { ...chartDefaults.plugins, title: { display: true, text: 'Daily Total Ate' } }
+        plugins: { ...chartDefaults.plugins, title: { display: true, text: 'סה"כ אכל ביום' } }
       }
     });
 
@@ -156,7 +156,7 @@ function updateChart() {
         labels,
         datasets: [
           {
-            label: 'Ate (ml)',
+            label: 'אכל (מ"ל)',
             data: sortedDates.map(d => daily[d].ate),
             backgroundColor: BLUE.bg,
             borderColor: BLUE.border,
@@ -164,7 +164,7 @@ function updateChart() {
             borderRadius: 4,
           },
           {
-            label: 'Added (ml)',
+            label: 'נוסף (מ"ל)',
             data: sortedDates.map(d => daily[d].added),
             backgroundColor: PURPLE.bg,
             borderColor: PURPLE.border,
@@ -176,7 +176,7 @@ function updateChart() {
       options: {
         ...chartDefaults,
         scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, max: getYMax(ateAddedValues) } },
-        plugins: { ...chartDefaults.plugins, title: { display: true, text: 'Ate vs Added Per Day' } }
+        plugins: { ...chartDefaults.plugins, title: { display: true, text: 'אכל מול נוסף ביום' } }
       }
     });
   }

@@ -71,8 +71,8 @@ async function createSession(name, password) {
 
 async function checkPassword(name, password) {
   const session = await findSession(name);
-  if (!session) return { ok: false, error: 'Session not found' };
-  if (hashPassword(password, session.salt) !== session.password_hash) return { ok: false, error: 'Wrong password' };
+  if (!session) return { ok: false, error: 'הסשן לא נמצא' };
+  if (hashPassword(password, session.salt) !== session.password_hash) return { ok: false, error: 'סיסמא שגויה' };
   return { ok: true };
 }
 
@@ -153,7 +153,7 @@ async function requireSession(req, res, next) {
 
 app.post('/api/session', async (req, res) => {
   const { name, password } = req.body;
-  if (!name || !password) return res.status(400).json({ error: 'Name and password are required' });
+  if (!name || !password) return res.status(400).json({ error: 'שם וסיסמא הם שדות חובה' });
   const trimmedName = name.trim();
   const existing = await findSession(trimmedName);
   if (!existing) {
@@ -212,19 +212,19 @@ app.get('/report', async (req, res) => {
     grouped[f.date].push(f);
   }
 
-  const formatDate = d => new Date(d + 'T00:00:00').toLocaleDateString('en-US', {
+  const formatDate = d => new Date(d + 'T00:00:00').toLocaleDateString('he-IL', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
   });
 
   const rangeLabel = (from || to)
-    ? `${from ? formatDate(from) : '...'} &rarr; ${to ? formatDate(to) : '...'}`
-    : 'All Entries';
+    ? `${from ? formatDate(from) : '...'} &larr; ${to ? formatDate(to) : '...'}`
+    : 'כל הרשומות';
 
   const blocks = Object.keys(grouped).sort((a, b) => b.localeCompare(a)).map(date => `
     <div class="day-block">
       <h2><span class="date-icon">📅</span> ${formatDate(date)}</h2>
       <table>
-        <thead><tr><th>Time</th><th>Ate from bottle</th><th>Added to feeding</th></tr></thead>
+        <thead><tr><th>שעה</th><th>אכל מהבקבוק</th><th>נוסף להאכלה</th></tr></thead>
         <tbody>
           ${grouped[date].map(f => `
             <tr>
@@ -237,10 +237,10 @@ app.get('/report', async (req, res) => {
     </div>`).join('');
 
   const html = `<!DOCTYPE html>
-<html lang="en">
+<html lang="he" dir="rtl">
 <head>
   <meta charset="UTF-8"/>
-  <title>Feeding Report</title>
+  <title>דוח האכלת תינוק</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f5f7fb; color: #2c3e6b; padding: 32px 24px; }
@@ -253,7 +253,7 @@ app.get('/report', async (req, res) => {
     .date-icon { font-size: 1.1rem; }
     table { width: 100%; border-collapse: collapse; }
     thead tr { background: #f0f4ff; }
-    th { padding: 10px 14px; text-align: left; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: #8492a6; border-bottom: 2px solid #e4e9f2; }
+    th { padding: 10px 14px; text-align: start; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: #8492a6; border-bottom: 2px solid #e4e9f2; }
     td { padding: 11px 14px; font-size: 0.92rem; border-bottom: 1px solid #f0f4ff; }
     tbody tr:last-child td { border-bottom: none; }
     tbody tr:nth-child(even) { background: #fafbff; }
@@ -270,11 +270,11 @@ app.get('/report', async (req, res) => {
 <body>
   <div class="report">
     <div class="report-header">
-      <h1>🍼 Baby Feeding Report</h1>
+      <h1>🍼 דוח האכלת תינוק</h1>
       <p>${rangeLabel}</p>
     </div>
-    ${blocks || '<p class="empty">No entries found for this range.</p>'}
-    <button class="print-btn" onclick="window.print()">🖨 Print / Save as PDF</button>
+    ${blocks || '<p class="empty">לא נמצאו רשומות בטווח זה.</p>'}
+    <button class="print-btn" onclick="window.print()">🖨 הדפסה / שמירה כ-PDF</button>
   </div>
 </body>
 </html>`;

@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="he" dir="rtl">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Baby Feeding Tracker</title>
+  <title>מעקב האכלת תינוק</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#5b8dee">
@@ -16,22 +16,22 @@
   <!-- Edit modal -->
   <div id="edit-modal" class="edit-overlay">
     <div class="edit-card">
-      <h2>Edit Entry</h2>
+      <h2>עריכת רשומה</h2>
       <input type="hidden" id="edit-id" />
       <div class="form-row">
-        <label>Date<input type="date" id="edit-date" required /></label>
-        <label>Time<input type="time" id="edit-time" required /></label>
+        <label>תאריך<input type="date" id="edit-date" required /></label>
+        <label>שעה<input type="time" id="edit-time" required /></label>
       </div>
       <div class="form-row">
-        <label>Ate from bottle (ml)<input type="number" id="edit-amount-eaten" min="0" required /></label>
-        <label>Added to feeding (ml)<input type="number" id="edit-amount-added" min="0" required /></label>
+        <label>אכל מהבקבוק (מ"ל)<input type="number" id="edit-amount-eaten" min="0" required /></label>
+        <label>נוסף להאכלה (מ"ל)<input type="number" id="edit-amount-added" min="0" required /></label>
       </div>
       <div class="form-row">
-        <label>Notes (optional)<input type="text" id="edit-notes" placeholder="e.g. seemed hungry, fussy..." /></label>
+        <label>הערות (לא חובה)<input type="text" id="edit-notes" placeholder="למשל: נראה רעב, עצבני..." /></label>
       </div>
       <div class="edit-actions">
-        <button class="btn btn-cancel" onclick="closeEditModal()">Cancel</button>
-        <button class="btn btn-primary" onclick="saveEdit()">Save</button>
+        <button class="btn btn-cancel" onclick="closeEditModal()">ביטול</button>
+        <button class="btn btn-primary" onclick="saveEdit()">שמור</button>
       </div>
     </div>
   </div>
@@ -40,77 +40,77 @@
   <div id="session-modal" class="modal-overlay">
     <div class="modal-card">
       <div class="modal-icon">🍼</div>
-      <h1>Baby Feeding Tracker</h1>
-      <p>Choose a session name and password.<br>Share both with your partner to sync data.</p>
+      <h1>מעקב האכלת תינוק</h1>
+      <p>בחרו שם סשן וסיסמא.<br>שתפו עם הפרטנר לסנכרון נתונים.</p>
       <div class="modal-fields">
-        <input type="text" id="session-name" placeholder="Session name (e.g. Baby Lior)" autocomplete="off" />
-        <input type="password" id="session-password" placeholder="Password" autocomplete="off" />
+        <input type="text" id="session-name" placeholder="שם סשן (למשל: ליאור)" autocomplete="off" />
+        <input type="password" id="session-password" placeholder="סיסמא" autocomplete="off" />
       </div>
-      <button class="btn btn-primary btn-full" onclick="startSession()">Start</button>
+      <button class="btn btn-primary btn-full" onclick="startSession()">כניסה</button>
       <p id="session-error" class="session-error"></p>
-      <p class="modal-hint">First time? This creates your session.<br>Returning? Enter the same name &amp; password.</p>
+      <p class="modal-hint">בפעם הראשונה? זה יצור את הסשן שלכם.<br>חוזרים? הזינו את אותו שם וסיסמא.</p>
     </div>
   </div>
 
   <header>
-    <h1>🍼 Baby Feeding Tracker</h1>
+    <h1>🍼 מעקב האכלת תינוק</h1>
     <div id="session-bar" class="session-bar">
-      <span class="session-label">Session: <strong id="session-name-display"></strong></span>
-      <button class="btn-pill" id="share-btn" onclick="shareLink()">Share App</button>
-      <button class="btn-pill btn-pill-danger" onclick="logout()">Log Out</button>
+      <span class="session-label">סשן: <strong id="session-name-display"></strong></span>
+      <button class="btn-pill" id="share-btn" onclick="shareLink()">שתף</button>
+      <button class="btn-pill btn-pill-danger" onclick="logout()">התנתק</button>
     </div>
   </header>
 
   <nav class="app-nav">
-    <a href="/" class="nav-link active">🏠 Home</a>
-    <a href="/stats.html" class="nav-link">📊 Stats</a>
+    <a href="/" class="nav-link active">🏠 בית</a>
+    <a href="/stats.html" class="nav-link">📊 סטטיסטיקות</a>
   </nav>
 
   <div class="container">
 
     <div class="card">
-      <h2>New Entry</h2>
+      <h2>רשומה חדשה</h2>
       <form id="feeding-form">
         <div class="form-row">
-          <label>Date<input type="date" id="date" required /></label>
-          <label>Time<input type="time" id="time" required /></label>
+          <label>תאריך<input type="date" id="date" required /></label>
+          <label>שעה<input type="time" id="time" required /></label>
         </div>
         <div class="form-row">
-          <label>Ate from bottle (ml)<input type="number" id="amount_eaten" min="0" required /></label>
-          <label>Added to feeding (ml)<input type="number" id="amount_added" min="0" required /></label>
+          <label>אכל מהבקבוק (מ"ל)<input type="number" id="amount_eaten" min="0" required /></label>
+          <label>נוסף להאכלה (מ"ל)<input type="number" id="amount_added" min="0" required /></label>
         </div>
         <div class="form-row">
-          <label>Notes (optional)<input type="text" id="notes" placeholder="e.g. seemed hungry, fussy..." /></label>
+          <label>הערות (לא חובה)<input type="text" id="notes" placeholder="למשל: נראה רעב, עצבני..." /></label>
         </div>
         <div class="form-actions">
-          <button type="submit" class="btn btn-primary">Add Entry</button>
+          <button type="submit" class="btn btn-primary">הוסף רשומה</button>
         </div>
       </form>
     </div>
 
     <div class="card">
-      <h2>Export Data</h2>
+      <h2>ייצוא נתונים</h2>
       <div class="export-row">
-        <label>From<input type="date" id="export-from" /></label>
-        <label>To<input type="date" id="export-to" /></label>
+        <label>מ-<input type="date" id="export-from" /></label>
+        <label>עד<input type="date" id="export-to" /></label>
         <div class="export-buttons">
-          <button class="btn btn-export" onclick="exportData()">View Report (Range)</button>
-          <button class="btn btn-export-all" onclick="exportAll()">View Full Report</button>
+          <button class="btn btn-export" onclick="exportData()">הצג דוח (טווח)</button>
+          <button class="btn btn-export-all" onclick="exportAll()">הצג דוח מלא</button>
         </div>
       </div>
     </div>
 
     <div class="card">
-      <h2>Feeding Log</h2>
+      <h2>יומן האכלה</h2>
       <div class="table-wrapper">
         <table id="feedings-table">
           <thead>
             <tr>
-              <th>Date</th>
-              <th>Time</th>
-              <th>Ate (ml)</th>
-              <th>Added (ml)</th>
-              <th>Notes</th>
+              <th>תאריך</th>
+              <th>שעה</th>
+              <th>אכל (מ"ל)</th>
+              <th>נוסף (מ"ל)</th>
+              <th>הערות</th>
               <th></th>
               <th></th>
             </tr>

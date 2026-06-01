@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="he" dir="rtl">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Stats - Baby Feeding Tracker</title>
+  <title>סטטיסטיקות - מעקב האכלת תינוק</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#5b8dee">
@@ -14,37 +14,37 @@
 <body>
 
   <header>
-    <h1>🍼 Baby Feeding Tracker</h1>
+    <h1>🍼 מעקב האכלת תינוק</h1>
     <div class="session-bar">
-      <span class="session-label">Session: <strong id="session-name-display"></strong></span>
-      <button class="btn-pill btn-pill-danger" onclick="logout()">Log Out</button>
+      <span class="session-label">סשן: <strong id="session-name-display"></strong></span>
+      <button class="btn-pill btn-pill-danger" onclick="logout()">התנתק</button>
     </div>
   </header>
 
   <nav class="app-nav">
-    <a href="/" class="nav-link">🏠 Home</a>
-    <a href="/stats.html" class="nav-link active">📊 Stats</a>
+    <a href="/" class="nav-link">🏠 בית</a>
+    <a href="/stats.html" class="nav-link active">📊 סטטיסטיקות</a>
   </nav>
 
   <div class="container">
 
     <div class="card">
       <div class="stats-controls">
-        <label>Graph
+        <label>גרף
           <select id="graph-type">
-            <option value="per-feeding">Per Feeding (ate)</option>
-            <option value="daily-total">Daily Total (ate)</option>
-            <option value="ate-vs-added">Ate vs Added per day</option>
+            <option value="per-feeding">לפי האכלה (אכל)</option>
+            <option value="daily-total">סה"כ יומי (אכל)</option>
+            <option value="ate-vs-added">אכל מול נוסף ביום</option>
           </select>
         </label>
-        <label>From<input type="date" id="stats-from" /></label>
-        <label>To<input type="date" id="stats-to" /></label>
-        <button class="btn btn-export-all stats-alltime" onclick="setAllTime()">All Time</button>
+        <label>מ-<input type="date" id="stats-from" /></label>
+        <label>עד<input type="date" id="stats-to" /></label>
+        <button class="btn btn-export-all stats-alltime" onclick="setAllTime()">כל הזמן</button>
       </div>
     </div>
 
     <div class="card chart-card">
-      <div id="no-data" class="empty-state" style="display:none">No entries found for this range.</div>
+      <div id="no-data" class="empty-state" style="display:none">לא נמצאו רשומות בטווח זה.</div>
       <canvas id="feeding-chart"></canvas>
     </div>
 
