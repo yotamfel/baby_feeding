@@ -62,11 +62,10 @@ function logout() {
 }
 
 function shareLink() {
-  const url = `${location.origin}/?session=${encodeURIComponent(getSessionName())}&password=${encodeURIComponent(getSessionPassword())}`;
-  navigator.clipboard.writeText(url).then(() => {
+  navigator.clipboard.writeText(location.origin).then(() => {
     const btn = document.getElementById('share-btn');
     btn.textContent = 'Copied!';
-    setTimeout(() => btn.textContent = 'Share Link', 2000);
+    setTimeout(() => btn.textContent = 'Share App', 2000);
   });
 }
 
@@ -90,10 +89,47 @@ async function loadFeedings() {
       <td><span class="badge badge-ate">${f.amount_eaten} ml</span></td>
       <td><span class="badge badge-added">${f.amount_added} ml</span></td>
       <td class="notes-cell">${f.notes || ''}</td>
+      <td><button class="edit-btn" onclick="openEditModal(${f.id}, '${f.date}', '${f.time}', ${f.amount_eaten}, ${f.amount_added}, ${JSON.stringify(f.notes || '')})">✎</button></td>
       <td><button class="delete-btn" onclick="deleteFeeding(${f.id})">✕</button></td>
     </tr>
   `).join('');
 }
+
+function openEditModal(id, date, time, amount_eaten, amount_added, notes) {
+  document.getElementById('edit-id').value = id;
+  document.getElementById('edit-date').value = date;
+  document.getElementById('edit-time').value = time;
+  document.getElementById('edit-amount-eaten').value = amount_eaten;
+  document.getElementById('edit-amount-added').value = amount_added;
+  document.getElementById('edit-notes').value = notes || '';
+  document.getElementById('edit-modal').style.display = 'flex';
+}
+
+function closeEditModal() {
+  document.getElementById('edit-modal').style.display = 'none';
+}
+
+async function saveEdit() {
+  const id = document.getElementById('edit-id').value;
+  const body = {
+    date: document.getElementById('edit-date').value,
+    time: document.getElementById('edit-time').value,
+    amount_eaten: Number(document.getElementById('edit-amount-eaten').value),
+    amount_added: Number(document.getElementById('edit-amount-added').value),
+    notes: document.getElementById('edit-notes').value.trim() || null,
+  };
+  await fetch(`/api/feedings/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...sessionHeaders() },
+    body: JSON.stringify(body),
+  });
+  closeEditModal();
+  loadFeedings();
+}
+
+document.getElementById('edit-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('edit-modal')) closeEditModal();
+});
 
 async function deleteFeeding(id) {
   await fetch(`/api/feedings/${id}`, { method: 'DELETE', headers: sessionHeaders() });

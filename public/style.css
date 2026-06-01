@@ -19,6 +19,61 @@ body {
   min-height: 100vh;
 }
 
+/* ── Edit modal ────────────────────────────────────────────────────────────── */
+
+.edit-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(44, 62, 107, 0.45);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 99;
+  padding: 20px;
+}
+
+.edit-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 28px;
+  max-width: 480px;
+  width: 100%;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+}
+
+.edit-card h2 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 20px;
+}
+
+.edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.btn-cancel {
+  background: #fff;
+  color: var(--muted);
+  border: 1.5px solid var(--border);
+}
+.btn-cancel:hover { background: #f5f7fb; }
+
+.edit-btn {
+  background: none;
+  border: none;
+  color: var(--primary);
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+.edit-btn:hover { background: #eef3ff; }
+
 /* ── Modal ─────────────────────────────────────────────────────────────────── */
 
 .modal-overlay {

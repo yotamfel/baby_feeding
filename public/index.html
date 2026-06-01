@@ -13,6 +13,29 @@
 </head>
 <body>
 
+  <!-- Edit modal -->
+  <div id="edit-modal" class="edit-overlay">
+    <div class="edit-card">
+      <h2>Edit Entry</h2>
+      <input type="hidden" id="edit-id" />
+      <div class="form-row">
+        <label>Date<input type="date" id="edit-date" required /></label>
+        <label>Time<input type="time" id="edit-time" required /></label>
+      </div>
+      <div class="form-row">
+        <label>Ate from bottle (ml)<input type="number" id="edit-amount-eaten" min="0" required /></label>
+        <label>Added to feeding (ml)<input type="number" id="edit-amount-added" min="0" required /></label>
+      </div>
+      <div class="form-row">
+        <label>Notes (optional)<input type="text" id="edit-notes" placeholder="e.g. seemed hungry, fussy..." /></label>
+      </div>
+      <div class="edit-actions">
+        <button class="btn btn-cancel" onclick="closeEditModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveEdit()">Save</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Session modal -->
   <div id="session-modal" class="modal-overlay">
     <div class="modal-card">
@@ -33,7 +56,7 @@
     <h1>🍼 Baby Feeding Tracker</h1>
     <div id="session-bar" class="session-bar">
       <span class="session-label">Session: <strong id="session-name-display"></strong></span>
-      <button class="btn-pill" id="share-btn" onclick="shareLink()">Share Link</button>
+      <button class="btn-pill" id="share-btn" onclick="shareLink()">Share App</button>
       <button class="btn-pill btn-pill-danger" onclick="logout()">Log Out</button>
     </div>
   </header>
@@ -83,6 +106,7 @@
               <th>Ate (ml)</th>
               <th>Added (ml)</th>
               <th>Notes</th>
+              <th></th>
               <th></th>
             </tr>
           </thead>

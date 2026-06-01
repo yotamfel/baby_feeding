@@ -104,6 +104,21 @@ async function insert(entry) {
   fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
 }
 
+async function update(id, sessionName, fields) {
+  const { date, time, amount_eaten, amount_added, notes } = fields;
+  if (pg) {
+    await pg.query(
+      'UPDATE feedings SET date=$1, time=$2, amount_eaten=$3, amount_added=$4, notes=$5 WHERE id=$6 AND session_id=$7',
+      [date, time, amount_eaten, amount_added, notes || null, id, sessionName]
+    );
+    return;
+  }
+  const data = fs.existsSync(DATA_FILE) ? JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')) : [];
+  const idx = data.findIndex(f => f.id === id && (f.session_id || 'default') === sessionName);
+  if (idx !== -1) data[idx] = { ...data[idx], date, time, amount_eaten, amount_added, notes: notes || null };
+  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+}
+
 async function remove(id, sessionName) {
   if (pg) {
     await pg.query('DELETE FROM feedings WHERE id = $1 AND session_id = $2', [id, sessionName]);
@@ -167,6 +182,15 @@ app.post('/api/feedings', requireSession, async (req, res) => {
 
 app.delete('/api/feedings/:id', requireSession, async (req, res) => {
   await remove(Number(req.params.id), req.sessionName);
+  res.json({ ok: true });
+});
+
+app.put('/api/feedings/:id', requireSession, async (req, res) => {
+  const { date, time, amount_eaten, amount_added, notes } = req.body;
+  if (!date || !time || amount_eaten == null || amount_added == null) {
+    return res.status(400).json({ error: 'All fields are required' });
+  }
+  await update(Number(req.params.id), req.sessionName, { date, time, amount_eaten, amount_added, notes });
   res.json({ ok: true });
 });
 
