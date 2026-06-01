@@ -263,6 +263,7 @@ header h1 {
 .stats-alltime { padding-bottom: 1px; }
 
 .chart-card { padding: 20px; }
+.chart-card canvas { min-height: 420px; }
 
 /* ── Layout ────────────────────────────────────────────────────────────────── */
 

@@ -50,13 +50,23 @@ const BLUE   = { bg: 'rgba(91,141,238,0.75)',  border: '#5b8dee' };
 const GREEN  = { bg: 'rgba(67,201,138,0.75)',  border: '#43c98a' };
 const PURPLE = { bg: 'rgba(140,109,234,0.75)', border: '#8c6dea' };
 
+function formatDate(d) {
+  const [y, m, day] = d.split('-');
+  return new Date(y, m - 1, day).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
 const chartDefaults = {
   responsive: true,
-  maintainAspectRatio: true,
+  maintainAspectRatio: false,
   plugins: { legend: { position: 'top' } },
   scales: {
     x: { ticks: { maxRotation: 45, minRotation: 30 } },
-    y: { beginAtZero: true, title: { display: true, text: 'ml' } }
+    y: {
+      min: 0,
+      max: 180,
+      ticks: { stepSize: 10 },
+      title: { display: true, text: 'ml' }
+    }
   }
 };
 
@@ -82,7 +92,7 @@ function updateChart() {
     chart = new Chart(ctx, {
       type: 'bar',
       data: {
-        labels: data.map(f => `${f.date} ${f.time}`),
+        labels: data.map(f => `${formatDate(f.date)} ${f.time}`),
         datasets: [{
           label: 'Ate from bottle (ml)',
           data: data.map(f => Number(f.amount_eaten)),
@@ -101,14 +111,15 @@ function updateChart() {
   } else if (type === 'daily-total') {
     const daily = {};
     for (const f of data) daily[f.date] = (daily[f.date] || 0) + Number(f.amount_eaten);
-    const labels = Object.keys(daily).sort();
+    const sortedDays = Object.keys(daily).sort();
+    const labels = sortedDays.map(formatDate);
     chart = new Chart(ctx, {
       type: 'bar',
       data: {
         labels,
         datasets: [{
           label: 'Total ate (ml)',
-          data: labels.map(d => daily[d]),
+          data: sortedDays.map(d => daily[d]),
           backgroundColor: GREEN.bg,
           borderColor: GREEN.border,
           borderWidth: 1,
@@ -128,7 +139,8 @@ function updateChart() {
       daily[f.date].ate   += Number(f.amount_eaten);
       daily[f.date].added += Number(f.amount_added);
     }
-    const labels = Object.keys(daily).sort();
+    const sortedDates = Object.keys(daily).sort();
+    const labels = sortedDates.map(formatDate);
     chart = new Chart(ctx, {
       type: 'bar',
       data: {
@@ -136,7 +148,7 @@ function updateChart() {
         datasets: [
           {
             label: 'Ate (ml)',
-            data: labels.map(d => daily[d].ate),
+            data: sortedDates.map(d => daily[d].ate),
             backgroundColor: BLUE.bg,
             borderColor: BLUE.border,
             borderWidth: 1,
@@ -144,7 +156,7 @@ function updateChart() {
           },
           {
             label: 'Added (ml)',
-            data: labels.map(d => daily[d].added),
+            data: sortedDates.map(d => daily[d].added),
             backgroundColor: PURPLE.bg,
             borderColor: PURPLE.border,
             borderWidth: 1,
