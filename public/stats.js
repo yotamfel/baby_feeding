@@ -55,6 +55,11 @@ function formatDate(d) {
   return new Date(y, m - 1, day).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
+function getYMax(values) {
+  const dataMax = Math.max(...values, 0);
+  return Math.ceil(Math.max(180, dataMax) / 10) * 10;
+}
+
 const chartDefaults = {
   responsive: true,
   maintainAspectRatio: false,
@@ -63,7 +68,6 @@ const chartDefaults = {
     x: { ticks: { maxRotation: 45, minRotation: 30 } },
     y: {
       min: 0,
-      max: 180,
       ticks: { stepSize: 10 },
       title: { display: true, text: 'ml' }
     }
@@ -89,13 +93,14 @@ function updateChart() {
   const ctx = canvas.getContext('2d');
 
   if (type === 'per-feeding') {
+    const eatenValues = data.map(f => Number(f.amount_eaten));
     chart = new Chart(ctx, {
       type: 'bar',
       data: {
         labels: data.map(f => `${formatDate(f.date)} ${f.time}`),
         datasets: [{
           label: 'Ate from bottle (ml)',
-          data: data.map(f => Number(f.amount_eaten)),
+          data: eatenValues,
           backgroundColor: BLUE.bg,
           borderColor: BLUE.border,
           borderWidth: 1,
@@ -104,6 +109,7 @@ function updateChart() {
       },
       options: {
         ...chartDefaults,
+        scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, max: getYMax(eatenValues) } },
         plugins: { ...chartDefaults.plugins, title: { display: true, text: 'Amount Ate Per Feeding' } }
       }
     });
@@ -113,13 +119,14 @@ function updateChart() {
     for (const f of data) daily[f.date] = (daily[f.date] || 0) + Number(f.amount_eaten);
     const sortedDays = Object.keys(daily).sort();
     const labels = sortedDays.map(formatDate);
+    const dailyValues = sortedDays.map(d => daily[d]);
     chart = new Chart(ctx, {
       type: 'bar',
       data: {
         labels,
         datasets: [{
           label: 'Total ate (ml)',
-          data: sortedDays.map(d => daily[d]),
+          data: dailyValues,
           backgroundColor: GREEN.bg,
           borderColor: GREEN.border,
           borderWidth: 1,
@@ -128,6 +135,7 @@ function updateChart() {
       },
       options: {
         ...chartDefaults,
+        scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, max: getYMax(dailyValues) } },
         plugins: { ...chartDefaults.plugins, title: { display: true, text: 'Daily Total Ate' } }
       }
     });
@@ -141,6 +149,7 @@ function updateChart() {
     }
     const sortedDates = Object.keys(daily).sort();
     const labels = sortedDates.map(formatDate);
+    const ateAddedValues = sortedDates.flatMap(d => [daily[d].ate, daily[d].added]);
     chart = new Chart(ctx, {
       type: 'bar',
       data: {
@@ -166,6 +175,7 @@ function updateChart() {
       },
       options: {
         ...chartDefaults,
+        scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, max: getYMax(ateAddedValues) } },
         plugins: { ...chartDefaults.plugins, title: { display: true, text: 'Ate vs Added Per Day' } }
       }
     });
