@@ -61,6 +61,15 @@ function logout() {
   document.getElementById('session-error').textContent = '';
 }
 
+function shareLink() {
+  const url = `${location.origin}/?session=${encodeURIComponent(getSessionName())}&password=${encodeURIComponent(getSessionPassword())}`;
+  navigator.clipboard.writeText(url).then(() => {
+    const btn = document.getElementById('share-btn');
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Share Link', 2000);
+  });
+}
+
 document.getElementById('session-name').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('session-password').focus(); });
 document.getElementById('session-password').addEventListener('keydown', e => { if (e.key === 'Enter') startSession(); });
 
@@ -126,10 +135,33 @@ document.getElementById('feeding-form').addEventListener('submit', async (e) => 
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 
-const savedName = getSessionName();
-if (savedName) {
-  applySession(savedName);
-} else {
-  document.getElementById('session-modal').style.display = 'flex';
-  document.getElementById('session-bar').style.display = 'none';
+async function init() {
+  const params = new URLSearchParams(location.search);
+  const urlSession = params.get('session');
+  const urlPassword = params.get('password');
+
+  if (urlSession && urlPassword) {
+    history.replaceState({}, '', '/');
+    const res = await fetch('/api/session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: urlSession, password: urlPassword }),
+    });
+    if (res.ok) {
+      localStorage.setItem(NAME_KEY, urlSession);
+      localStorage.setItem(PASS_KEY, urlPassword);
+      applySession(urlSession);
+      return;
+    }
+  }
+
+  const savedName = getSessionName();
+  if (savedName) {
+    applySession(savedName);
+  } else {
+    document.getElementById('session-modal').style.display = 'flex';
+    document.getElementById('session-bar').style.display = 'none';
+  }
 }
+
+init();
