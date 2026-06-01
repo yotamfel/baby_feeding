@@ -101,8 +101,8 @@ async function loadFeedings() {
       <td><span class="badge badge-ate">${f.amount_eaten} ml</span></td>
       <td><span class="badge badge-added">${f.amount_added} ml</span></td>
       <td class="notes-cell">${f.notes || ''}</td>
-      <td><button class="edit-btn" onclick="openEditModal('${f.id}')">✎</button></td>
-      <td><button class="delete-btn" onclick="deleteFeeding('${f.id}')">✕</button></td>
+      <td><button class="edit-btn" data-id="${f.id}">✎</button></td>
+      <td><button class="delete-btn" data-id="${f.id}">✕</button></td>
     </tr>
   `).join('');
 }
@@ -146,12 +146,21 @@ document.getElementById('edit-modal').addEventListener('click', e => {
   if (e.target === document.getElementById('edit-modal')) closeEditModal();
 });
 
-async function deleteFeeding(id) {
-  const res = await apiFetch(`/api/feedings/${id}`, { method: 'DELETE', headers: sessionHeaders() });
-  if (!res) return;
-  feedingsData = feedingsData.filter(f => String(f.id) !== String(id));
-  loadFeedings();
-}
+document.querySelector('#feedings-table tbody').addEventListener('click', async e => {
+  const editBtn = e.target.closest('.edit-btn');
+  const deleteBtn = e.target.closest('.delete-btn');
+
+  if (editBtn) {
+    openEditModal(editBtn.dataset.id);
+  }
+
+  if (deleteBtn) {
+    const id = deleteBtn.dataset.id;
+    const res = await apiFetch(`/api/feedings/${id}`, { method: 'DELETE', headers: sessionHeaders() });
+    if (!res) return;
+    loadFeedings();
+  }
+});
 
 function exportData() {
   const from = document.getElementById('export-from').value;
