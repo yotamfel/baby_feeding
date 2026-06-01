@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stats - Baby Feeding Tracker</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#5b8dee">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Feeding">
+  <link rel="apple-touch-icon" href="/icon.svg">
+</head>
+<body>
+
+  <header>
+    <h1>🍼 Baby Feeding Tracker</h1>
+    <div class="session-bar">
+      <span class="session-label">Session: <strong id="session-name-display"></strong></span>
+      <button class="btn-pill btn-pill-danger" onclick="logout()">Log Out</button>
+    </div>
+  </header>
+
+  <nav class="app-nav">
+    <a href="/" class="nav-link">🏠 Home</a>
+    <a href="/stats.html" class="nav-link active">📊 Stats</a>
+  </nav>
+
+  <div class="container">
+
+    <div class="card">
+      <div class="stats-controls">
+        <label>Graph
+          <select id="graph-type">
+            <option value="per-feeding">Per Feeding (ate)</option>
+            <option value="daily-total">Daily Total (ate)</option>
+            <option value="ate-vs-added">Ate vs Added per day</option>
+          </select>
+        </label>
+        <label>From<input type="date" id="stats-from" /></label>
+        <label>To<input type="date" id="stats-to" /></label>
+        <button class="btn btn-export-all stats-alltime" onclick="setAllTime()">All Time</button>
+      </div>
+    </div>
+
+    <div class="card chart-card">
+      <div id="no-data" class="empty-state" style="display:none">No entries found for this range.</div>
+      <canvas id="feeding-chart"></canvas>
+    </div>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="stats.js"></script>
+</body>
+</html>
