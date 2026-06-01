@@ -122,9 +122,9 @@ function renderTable() {
   `).join('');
 
   document.getElementById('pagination').innerHTML = totalPages <= 1 ? '' : `
-    <button class="page-btn" ${currentPage === 1 ? 'disabled' : ''} onclick="goToPage(${currentPage - 1})">← Prev</button>
+    <button class="page-btn" ${currentPage === totalPages ? 'disabled' : ''} onclick="goToPage(${currentPage + 1})">← Prev</button>
     <span class="page-info">Page ${currentPage} of ${totalPages}</span>
-    <button class="page-btn" ${currentPage === totalPages ? 'disabled' : ''} onclick="goToPage(${currentPage + 1})">Next →</button>
+    <button class="page-btn" ${currentPage === 1 ? 'disabled' : ''} onclick="goToPage(${currentPage - 1})">Next →</button>
   `;
 }
 
