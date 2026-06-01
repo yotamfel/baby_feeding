@@ -84,17 +84,32 @@ document.getElementById('session-password').addEventListener('keydown', e => { i
 // ── Feedings ──────────────────────────────────────────────────────────────────
 
 let feedingsData = [];
+let currentPage = 1;
+const PAGE_SIZE = 5;
 
 async function loadFeedings() {
   const res = await apiFetch('/api/feedings', { headers: sessionHeaders() });
   if (!res) return;
   feedingsData = await res.json();
+  currentPage = 1;
+  renderTable();
+}
+
+function renderTable() {
   const tbody = document.querySelector('#feedings-table tbody');
+  const totalPages = Math.max(1, Math.ceil(feedingsData.length / PAGE_SIZE));
+  currentPage = Math.min(currentPage, totalPages);
+
   if (feedingsData.length === 0) {
     tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No entries yet. Add the first feeding above.</td></tr>';
+    document.getElementById('pagination').innerHTML = '';
     return;
   }
-  tbody.innerHTML = feedingsData.map(f => `
+
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const pageData = feedingsData.slice(start, start + PAGE_SIZE);
+
+  tbody.innerHTML = pageData.map(f => `
     <tr>
       <td>${f.date}</td>
       <td>${f.time}</td>
@@ -105,6 +120,17 @@ async function loadFeedings() {
       <td><button class="delete-btn" data-id="${f.id}">✕</button></td>
     </tr>
   `).join('');
+
+  document.getElementById('pagination').innerHTML = totalPages <= 1 ? '' : `
+    <button class="page-btn" ${currentPage === 1 ? 'disabled' : ''} onclick="goToPage(${currentPage - 1})">← Prev</button>
+    <span class="page-info">Page ${currentPage} of ${totalPages}</span>
+    <button class="page-btn" ${currentPage === totalPages ? 'disabled' : ''} onclick="goToPage(${currentPage + 1})">Next →</button>
+  `;
+}
+
+function goToPage(page) {
+  currentPage = page;
+  renderTable();
 }
 
 function openEditModal(id) {
