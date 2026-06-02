@@ -284,6 +284,7 @@ function updateChart() {
         scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, max: getYMax(eatenValues) } },
         plugins: {
           ...chartDefaults.plugins,
+          legend: { display: false },
           title: { display: true, text: 'כמות אכילה' },
           annotation: { annotations },
         }
@@ -314,7 +315,7 @@ function updateChart() {
       options: {
         ...chartDefaults,
         scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, max: getYMax(dailyValues) } },
-        plugins: { ...chartDefaults.plugins, title: { display: true, text: 'סה"כ יומי' } }
+        plugins: { ...chartDefaults.plugins, legend: { display: false }, title: { display: true, text: 'סה"כ יומי' } }
       }
     });
 
