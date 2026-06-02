@@ -11,6 +11,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 const DATA_FILE = path.join(__dirname, 'feedings.json');
 const SESSIONS_FILE = path.join(__dirname, 'sessions.json');
+const MARKERS_FILE = path.join(__dirname, 'markers.json');
 let pg = null;
 
 function hashPassword(password, salt) {
@@ -41,6 +42,15 @@ async function initStorage() {
     `);
     await pg.query(`ALTER TABLE feedings ADD COLUMN IF NOT EXISTS session_id TEXT NOT NULL DEFAULT 'default'`);
     await pg.query(`ALTER TABLE feedings ADD COLUMN IF NOT EXISTS notes TEXT`);
+    await pg.query(`
+      CREATE TABLE IF NOT EXISTS markers (
+        id BIGINT PRIMARY KEY,
+        session_id TEXT NOT NULL,
+        date TEXT NOT NULL,
+        time TEXT NOT NULL,
+        label TEXT NOT NULL
+      )
+    `);
     console.log('Using PostgreSQL');
   } else {
     console.log('Using local JSON file');
@@ -131,6 +141,46 @@ async function remove(id, sessionName) {
   ));
 }
 
+// Markers
+async function getAllMarkers(sessionName) {
+  if (pg) {
+    const { rows } = await pg.query(
+      'SELECT * FROM markers WHERE session_id = $1 ORDER BY date ASC, time ASC',
+      [sessionName]
+    );
+    return rows;
+  }
+  const all = fs.existsSync(MARKERS_FILE) ? JSON.parse(fs.readFileSync(MARKERS_FILE, 'utf8')) : [];
+  return all
+    .filter(m => m.session_id === sessionName)
+    .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+}
+
+async function insertMarker(marker) {
+  if (pg) {
+    await pg.query(
+      'INSERT INTO markers (id, session_id, date, time, label) VALUES ($1, $2, $3, $4, $5)',
+      [marker.id, marker.session_id, marker.date, marker.time, marker.label]
+    );
+    return;
+  }
+  const data = fs.existsSync(MARKERS_FILE) ? JSON.parse(fs.readFileSync(MARKERS_FILE, 'utf8')) : [];
+  data.push(marker);
+  fs.writeFileSync(MARKERS_FILE, JSON.stringify(data, null, 2));
+}
+
+async function removeMarker(id, sessionName) {
+  if (pg) {
+    await pg.query('DELETE FROM markers WHERE id = $1 AND session_id = $2', [id, sessionName]);
+    return;
+  }
+  const data = fs.existsSync(MARKERS_FILE) ? JSON.parse(fs.readFileSync(MARKERS_FILE, 'utf8')) : [];
+  fs.writeFileSync(MARKERS_FILE, JSON.stringify(
+    data.filter(m => !(m.id === id && m.session_id === sessionName)),
+    null, 2
+  ));
+}
+
 // ── Auth middleware ───────────────────────────────────────────────────────────
 
 function getCredentials(req) {
@@ -191,6 +241,23 @@ app.put('/api/feedings/:id', requireSession, async (req, res) => {
     return res.status(400).json({ error: 'All fields are required' });
   }
   await update(Number(req.params.id), req.sessionName, { date, time, amount_eaten, amount_added, notes });
+  res.json({ ok: true });
+});
+
+app.get('/api/markers', requireSession, async (req, res) => {
+  res.json(await getAllMarkers(req.sessionName));
+});
+
+app.post('/api/markers', requireSession, async (req, res) => {
+  const { date, time, label } = req.body;
+  if (!date || !time || !label) return res.status(400).json({ error: 'כל השדות הם חובה' });
+  const marker = { id: Date.now(), session_id: req.sessionName, date, time, label: label.trim() };
+  await insertMarker(marker);
+  res.json({ id: marker.id });
+});
+
+app.delete('/api/markers/:id', requireSession, async (req, res) => {
+  await removeMarker(Number(req.params.id), req.sessionName);
   res.json({ ok: true });
 });
 

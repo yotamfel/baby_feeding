@@ -39,6 +39,12 @@
         </label>
         <label>מ-<input type="date" id="stats-from" /></label>
         <label>עד<input type="date" id="stats-to" /></label>
+        <label>מ-נקודה
+          <select id="filter-from-marker"><option value="">ללא</option></select>
+        </label>
+        <label>עד-נקודה
+          <select id="filter-to-marker"><option value="">ללא</option></select>
+        </label>
         <button class="btn btn-export-all stats-alltime" onclick="setAllTime()">כל הזמן</button>
       </div>
     </div>
@@ -48,9 +54,23 @@
       <canvas id="feeding-chart"></canvas>
     </div>
 
+    <div class="card">
+      <h2>נקודות עניין</h2>
+      <div class="form-row">
+        <label>תאריך<input type="date" id="marker-date" /></label>
+        <label>שעה<input type="time" id="marker-time" /></label>
+        <label>תיאור<input type="text" id="marker-label" placeholder="למשל: שינוי פורמולה" /></label>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" onclick="addMarker()">הוסף נקודה</button>
+      </div>
+      <div id="markers-list"></div>
+    </div>
+
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3"></script>
   <script src="stats.js"></script>
 </body>
 </html>

@@ -472,6 +472,27 @@ tbody tr:hover { background: #f8f9ff; }
   font-size: 0.95rem;
 }
 
+.marker-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: #f8f9fd;
+  border-radius: 8px;
+  margin-bottom: 6px;
+  font-size: 0.88rem;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+#markers-list { margin-top: 14px; }
+
+.markers-empty {
+  color: var(--muted);
+  font-size: 0.88rem;
+  margin-top: 10px;
+}
+
 @media (max-width: 520px) {
   header { flex-direction: column; align-items: flex-start; }
   .form-row, .export-row { flex-direction: column; }

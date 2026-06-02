@@ -14,18 +14,24 @@ function logout() {
   window.location.href = '/';
 }
 
+function sessionHeaders() {
+  return { 'x-session-id': getSessionName(), 'x-session-password': getSessionPassword() };
+}
+
 // ── Data ──────────────────────────────────────────────────────────────────────
 
 let allFeedings = [];
+let allMarkers = [];
 let chart = null;
 
 async function fetchFeedings() {
-  const res = await fetch('/api/feedings', {
-    headers: {
-      'x-session-id': getSessionName(),
-      'x-session-password': getSessionPassword(),
-    }
-  });
+  const res = await fetch('/api/feedings', { headers: sessionHeaders() });
+  if (res.status === 401) { logout(); return []; }
+  return await res.json();
+}
+
+async function fetchMarkers() {
+  const res = await fetch('/api/markers', { headers: sessionHeaders() });
   if (res.status === 401) { logout(); return []; }
   return await res.json();
 }
@@ -38,10 +44,85 @@ function getFiltered() {
     .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
 }
 
+function getFilteredWithMarkers() {
+  let data = getFiltered();
+  const fromId = document.getElementById('filter-from-marker').value;
+  const toId   = document.getElementById('filter-to-marker').value;
+  if (fromId) {
+    const m = allMarkers.find(m => String(m.id) === fromId);
+    if (m) data = data.filter(f => (f.date + f.time) >= (m.date + m.time));
+  }
+  if (toId) {
+    const m = allMarkers.find(m => String(m.id) === toId);
+    if (m) data = data.filter(f => (f.date + f.time) <= (m.date + m.time));
+  }
+  return data;
+}
+
 function setAllTime() {
   document.getElementById('stats-from').value = '';
   document.getElementById('stats-to').value = '';
+  document.getElementById('filter-from-marker').value = '';
+  document.getElementById('filter-to-marker').value = '';
   updateChart();
+}
+
+// ── Markers UI ────────────────────────────────────────────────────────────────
+
+async function addMarker() {
+  const date  = document.getElementById('marker-date').value;
+  const time  = document.getElementById('marker-time').value;
+  const label = document.getElementById('marker-label').value.trim();
+  if (!date || !time || !label) return;
+  const res = await fetch('/api/markers', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...sessionHeaders() },
+    body: JSON.stringify({ date, time, label }),
+  });
+  if (res.status === 401) { logout(); return; }
+  document.getElementById('marker-date').value = '';
+  document.getElementById('marker-time').value = '';
+  document.getElementById('marker-label').value = '';
+  allMarkers = await fetchMarkers();
+  renderMarkersList();
+  updateMarkerSelects();
+  updateChart();
+}
+
+async function deleteMarker(id) {
+  const res = await fetch(`/api/markers/${id}`, { method: 'DELETE', headers: sessionHeaders() });
+  if (res.status === 401) { logout(); return; }
+  allMarkers = await fetchMarkers();
+  renderMarkersList();
+  updateMarkerSelects();
+  updateChart();
+}
+
+function renderMarkersList() {
+  const container = document.getElementById('markers-list');
+  if (allMarkers.length === 0) {
+    container.innerHTML = '<p class="markers-empty">אין נקודות עניין עדיין.</p>';
+    return;
+  }
+  container.innerHTML = allMarkers.map(m => `
+    <div class="marker-item">
+      <span>${m.date} ${m.time} — ${m.label}</span>
+      <button class="delete-btn" onclick="deleteMarker(${m.id})">✕</button>
+    </div>
+  `).join('');
+}
+
+function updateMarkerSelects() {
+  const fromSel = document.getElementById('filter-from-marker');
+  const toSel   = document.getElementById('filter-to-marker');
+  const fromVal = fromSel.value;
+  const toVal   = toSel.value;
+  const opts = '<option value="">ללא</option>' +
+    allMarkers.map(m => `<option value="${m.id}">${m.date} ${m.time} — ${m.label}</option>`).join('');
+  fromSel.innerHTML = opts;
+  toSel.innerHTML   = opts;
+  if (allMarkers.some(m => String(m.id) === fromVal)) fromSel.value = fromVal;
+  if (allMarkers.some(m => String(m.id) === toVal))   toSel.value   = toVal;
 }
 
 // ── Charts ────────────────────────────────────────────────────────────────────
@@ -60,6 +141,18 @@ function getYMax(values) {
   return Math.ceil(Math.max(180, dataMax + 1) / 10) * 10;
 }
 
+function findNearestLabel(marker, feedingData) {
+  if (feedingData.length === 0) return null;
+  const mTS = new Date(`${marker.date}T${marker.time}`).getTime();
+  let nearest = feedingData[0];
+  let minDiff = Infinity;
+  for (const f of feedingData) {
+    const diff = Math.abs(new Date(`${f.date}T${f.time}`).getTime() - mTS);
+    if (diff < minDiff) { minDiff = diff; nearest = f; }
+  }
+  return `${formatDate(nearest.date)} ${nearest.time}`;
+}
+
 const chartDefaults = {
   responsive: true,
   maintainAspectRatio: false,
@@ -74,12 +167,47 @@ const chartDefaults = {
   }
 };
 
+function buildAnnotations(data) {
+  if (!data.length) return {};
+  const firstDT = data[0].date + data[0].time;
+  const lastDT  = data[data.length - 1].date + data[data.length - 1].time;
+  const annotations = {};
+  for (const m of allMarkers) {
+    const mDT = m.date + m.time;
+    if (mDT < firstDT || mDT > lastDT) continue;
+    const nearestLabel = findNearestLabel(m, data);
+    if (!nearestLabel) continue;
+    annotations[`marker_${m.id}`] = {
+      type: 'line',
+      scaleID: 'x',
+      value: nearestLabel,
+      borderColor: '#f46a6a',
+      borderWidth: 2,
+      borderDash: [5, 5],
+      label: {
+        display: true,
+        content: m.label,
+        position: 'start',
+        backgroundColor: 'rgba(244,106,106,0.85)',
+        color: '#fff',
+        font: { size: 10, weight: 'bold' },
+        padding: { x: 6, y: 3 },
+        borderRadius: 4,
+      }
+    };
+  }
+  return annotations;
+}
+
 function updateChart() {
-  const data = getFiltered();
   const noData = document.getElementById('no-data');
   const canvas = document.getElementById('feeding-chart');
-
   if (chart) { chart.destroy(); chart = null; }
+
+  const type = document.getElementById('graph-type').value;
+
+  // per-feeding uses marker filter + annotations; others use base filter
+  const data = type === 'per-feeding' ? getFilteredWithMarkers() : getFiltered();
 
   if (data.length === 0) {
     noData.style.display = 'block';
@@ -89,11 +217,11 @@ function updateChart() {
   noData.style.display = 'none';
   canvas.style.display = 'block';
 
-  const type = document.getElementById('graph-type').value;
   const ctx = canvas.getContext('2d');
 
   if (type === 'per-feeding') {
     const eatenValues = data.map(f => Number(f.amount_eaten));
+    const annotations = buildAnnotations(data);
     chart = new Chart(ctx, {
       type: 'line',
       data: {
@@ -112,7 +240,11 @@ function updateChart() {
       options: {
         ...chartDefaults,
         scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, max: getYMax(eatenValues) } },
-        plugins: { ...chartDefaults.plugins, title: { display: true, text: 'כמות אכילה' } }
+        plugins: {
+          ...chartDefaults.plugins,
+          title: { display: true, text: 'כמות אכילה' },
+          annotation: { annotations },
+        }
       }
     });
 
@@ -191,8 +323,13 @@ function updateChart() {
 document.getElementById('graph-type').addEventListener('change', updateChart);
 document.getElementById('stats-from').addEventListener('change', updateChart);
 document.getElementById('stats-to').addEventListener('change', updateChart);
+document.getElementById('filter-from-marker').addEventListener('change', updateChart);
+document.getElementById('filter-to-marker').addEventListener('change', updateChart);
 
-fetchFeedings().then(data => {
+fetchFeedings().then(async data => {
   allFeedings = data;
+  allMarkers = await fetchMarkers();
+  renderMarkersList();
+  updateMarkerSelects();
   updateChart();
 });
