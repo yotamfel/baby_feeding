@@ -224,7 +224,7 @@ app.get('/report', async (req, res) => {
     <div class="day-block">
       <h2><span class="date-icon">📅</span> ${formatDate(date)}</h2>
       <table>
-        <thead><tr><th>שעה</th><th>אכל מהבקבוק</th><th>נוסף להאכלה</th></tr></thead>
+        <thead><tr><th>שעה</th><th>אכל מהבקבוק</th><th>הוספה</th></tr></thead>
         <tbody>
           ${grouped[date].sort((a, b) => b.time.localeCompare(a.time)).map(f => `
             <tr>
@@ -240,7 +240,7 @@ app.get('/report', async (req, res) => {
 <html lang="he" dir="rtl">
 <head>
   <meta charset="UTF-8"/>
-  <title>דוח האכלת תינוק</title>
+  <title>דו"ח האכלת תינוק</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f5f7fb; color: #2c3e6b; padding: 32px 24px; }
@@ -270,7 +270,7 @@ app.get('/report', async (req, res) => {
 <body>
   <div class="report">
     <div class="report-header">
-      <h1>🍼 דוח האכלת תינוק</h1>
+      <h1>🍼 דו"ח האכלת תינוק</h1>
       <p>${rangeLabel}</p>
     </div>
     ${blocks || '<p class="empty">לא נמצאו רשומות בטווח זה.</p>'}

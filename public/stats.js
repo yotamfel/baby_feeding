@@ -164,7 +164,7 @@ function updateChart() {
             borderRadius: 4,
           },
           {
-            label: 'נוסף (מ"ל)',
+            label: 'הוספה (מ"ל)',
             data: sortedDates.map(d => daily[d].added),
             backgroundColor: PURPLE.bg,
             borderColor: PURPLE.border,
@@ -176,7 +176,7 @@ function updateChart() {
       options: {
         ...chartDefaults,
         scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, max: getYMax(ateAddedValues) } },
-        plugins: { ...chartDefaults.plugins, title: { display: true, text: 'אכל מול נוסף ביום' } }
+        plugins: { ...chartDefaults.plugins, title: { display: true, text: 'אכל מול הוספה ביום' } }
       }
     });
   }

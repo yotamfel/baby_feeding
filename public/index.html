@@ -24,7 +24,7 @@
       </div>
       <div class="form-row">
         <label>אכל מהבקבוק (מ"ל)<input type="number" id="edit-amount-eaten" min="0" required /></label>
-        <label>נוסף להאכלה (מ"ל)<input type="number" id="edit-amount-added" min="0" required /></label>
+        <label>הוספה (מ"ל)<input type="number" id="edit-amount-added" min="0" required /></label>
       </div>
       <div class="form-row">
         <label>הערות (לא חובה)<input type="text" id="edit-notes" placeholder="למשל: נראה רעב, עצבני..." /></label>
@@ -41,21 +41,21 @@
     <div class="modal-card">
       <div class="modal-icon">🍼</div>
       <h1>מעקב האכלת תינוק</h1>
-      <p>בחרו שם סשן וסיסמא.<br>שתפו עם הפרטנר לסנכרון נתונים.</p>
+      <p>בחרו שם משתמש וסיסמא.<br>שתפו עם הפרטנר לסנכרון נתונים.</p>
       <div class="modal-fields">
-        <input type="text" id="session-name" placeholder="שם סשן (למשל: ליאור)" autocomplete="off" />
+        <input type="text" id="session-name" placeholder="שם משתמש (למשל: ליאור)" autocomplete="off" />
         <input type="password" id="session-password" placeholder="סיסמא" autocomplete="off" />
       </div>
       <button class="btn btn-primary btn-full" onclick="startSession()">כניסה</button>
       <p id="session-error" class="session-error"></p>
-      <p class="modal-hint">בפעם הראשונה? זה יצור את הסשן שלכם.<br>חוזרים? הזינו את אותו שם וסיסמא.</p>
+      <p class="modal-hint">בפעם הראשונה? זה יצור את המשתמש שלכם.<br>חוזרים? הזינו את אותו שם וסיסמא.</p>
     </div>
   </div>
 
   <header>
     <h1>🍼 מעקב האכלת תינוק</h1>
     <div id="session-bar" class="session-bar">
-      <span class="session-label">סשן: <strong id="session-name-display"></strong></span>
+      <span class="session-label">משתמש: <strong id="session-name-display"></strong></span>
       <button class="btn-pill" id="share-btn" onclick="shareLink()">שתף</button>
       <button class="btn-pill btn-pill-danger" onclick="logout()">התנתק</button>
     </div>
@@ -77,7 +77,7 @@
         </div>
         <div class="form-row">
           <label>אכל מהבקבוק (מ"ל)<input type="number" id="amount_eaten" min="0" required /></label>
-          <label>נוסף להאכלה (מ"ל)<input type="number" id="amount_added" min="0" required /></label>
+          <label>הוספה (מ"ל)<input type="number" id="amount_added" min="0" required /></label>
         </div>
         <div class="form-row">
           <label>הערות (לא חובה)<input type="text" id="notes" placeholder="למשל: נראה רעב, עצבני..." /></label>
@@ -94,8 +94,8 @@
         <label>מ-<input type="date" id="export-from" /></label>
         <label>עד<input type="date" id="export-to" /></label>
         <div class="export-buttons">
-          <button class="btn btn-export" onclick="exportData()">הצג דוח (טווח)</button>
-          <button class="btn btn-export-all" onclick="exportAll()">הצג דוח מלא</button>
+          <button class="btn btn-export" onclick="exportData()">הצג דו"ח (טווח)</button>
+          <button class="btn btn-export-all" onclick="exportAll()">הצג דו"ח מלא</button>
         </div>
       </div>
     </div>
@@ -109,7 +109,7 @@
               <th>תאריך</th>
               <th>שעה</th>
               <th>אכל (מ"ל)</th>
-              <th>נוסף (מ"ל)</th>
+              <th>הוספה (מ"ל)</th>
               <th>הערות</th>
               <th></th>
               <th></th>
