@@ -57,7 +57,7 @@ function formatDate(d) {
 
 function getYMax(values) {
   const dataMax = Math.max(...values, 0);
-  return Math.ceil(Math.max(180, dataMax) / 10) * 10;
+  return Math.ceil(Math.max(180, dataMax + 1) / 10) * 10;
 }
 
 const chartDefaults = {
