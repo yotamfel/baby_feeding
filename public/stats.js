@@ -95,7 +95,7 @@ function updateChart() {
   if (type === 'per-feeding') {
     const eatenValues = data.map(f => Number(f.amount_eaten));
     chart = new Chart(ctx, {
-      type: 'bar',
+      type: 'line',
       data: {
         labels: data.map(f => `${formatDate(f.date)} ${f.time}`),
         datasets: [{
@@ -103,8 +103,10 @@ function updateChart() {
           data: eatenValues,
           backgroundColor: BLUE.bg,
           borderColor: BLUE.border,
-          borderWidth: 1,
-          borderRadius: 4,
+          borderWidth: 2,
+          tension: 0,
+          pointRadius: 5,
+          fill: false,
         }]
       },
       options: {
@@ -121,7 +123,7 @@ function updateChart() {
     const labels = sortedDays.map(formatDate);
     const dailyValues = sortedDays.map(d => daily[d]);
     chart = new Chart(ctx, {
-      type: 'bar',
+      type: 'line',
       data: {
         labels,
         datasets: [{
@@ -129,8 +131,10 @@ function updateChart() {
           data: dailyValues,
           backgroundColor: GREEN.bg,
           borderColor: GREEN.border,
-          borderWidth: 1,
-          borderRadius: 4,
+          borderWidth: 2,
+          tension: 0,
+          pointRadius: 5,
+          fill: false,
         }]
       },
       options: {
