@@ -181,6 +181,21 @@ async function removeMarker(id, sessionName) {
   ));
 }
 
+async function updateMarker(id, sessionName, fields) {
+  const { date, time, label } = fields;
+  if (pg) {
+    await pg.query(
+      'UPDATE markers SET date=$1, time=$2, label=$3 WHERE id=$4 AND session_id=$5',
+      [date, time, label, id, sessionName]
+    );
+    return;
+  }
+  const data = fs.existsSync(MARKERS_FILE) ? JSON.parse(fs.readFileSync(MARKERS_FILE, 'utf8')) : [];
+  const idx = data.findIndex(m => m.id === id && m.session_id === sessionName);
+  if (idx !== -1) data[idx] = { ...data[idx], date, time, label };
+  fs.writeFileSync(MARKERS_FILE, JSON.stringify(data, null, 2));
+}
+
 // ── Auth middleware ───────────────────────────────────────────────────────────
 
 function getCredentials(req) {
@@ -258,6 +273,13 @@ app.post('/api/markers', requireSession, async (req, res) => {
 
 app.delete('/api/markers/:id', requireSession, async (req, res) => {
   await removeMarker(Number(req.params.id), req.sessionName);
+  res.json({ ok: true });
+});
+
+app.put('/api/markers/:id', requireSession, async (req, res) => {
+  const { date, time, label } = req.body;
+  if (!date || !time || !label) return res.status(400).json({ error: 'כל השדות הם חובה' });
+  await updateMarker(Number(req.params.id), req.sessionName, { date, time, label: label.trim() });
   res.json({ ok: true });
 });
 

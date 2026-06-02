@@ -13,6 +13,25 @@
 </head>
 <body>
 
+  <!-- Edit marker modal -->
+  <div id="edit-marker-modal" class="edit-overlay">
+    <div class="edit-card">
+      <h2>עריכת נקודת עניין</h2>
+      <input type="hidden" id="edit-marker-id" />
+      <div class="form-row">
+        <label>תאריך<input type="date" id="edit-marker-date" required /></label>
+        <label>שעה<input type="time" id="edit-marker-time" required /></label>
+      </div>
+      <div class="form-row">
+        <label>תיאור<input type="text" id="edit-marker-label" /></label>
+      </div>
+      <div class="edit-actions">
+        <button class="btn btn-cancel" onclick="closeEditMarkerModal()">ביטול</button>
+        <button class="btn btn-primary" onclick="saveMarkerEdit()">שמור</button>
+      </div>
+    </div>
+  </div>
+
   <header>
     <h1>🍼 מעקב האכלת תינוק</h1>
     <div class="session-bar">

@@ -57,6 +57,7 @@ function applySession(name) {
   document.getElementById('session-bar').style.display = 'flex';
   document.getElementById('date').valueAsDate = new Date();
   loadFeedings();
+  loadMarkers();
 }
 
 function logout() {
@@ -65,6 +66,7 @@ function logout() {
   document.getElementById('session-modal').style.display = 'flex';
   document.getElementById('session-bar').style.display = 'none';
   document.querySelector('#feedings-table tbody').innerHTML = '';
+  document.querySelector('#markers-table tbody').innerHTML = '';
   document.getElementById('session-name').value = '';
   document.getElementById('session-password').value = '';
   document.getElementById('session-error').textContent = '';
@@ -80,6 +82,76 @@ function shareLink() {
 
 document.getElementById('session-name').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('session-password').focus(); });
 document.getElementById('session-password').addEventListener('keydown', e => { if (e.key === 'Enter') startSession(); });
+
+// ── Markers ───────────────────────────────────────────────────────────────────
+
+let markersData = [];
+
+async function loadMarkers() {
+  const res = await apiFetch('/api/markers', { headers: sessionHeaders() });
+  if (!res) return;
+  markersData = await res.json();
+  renderMarkersLog();
+}
+
+function renderMarkersLog() {
+  const tbody = document.querySelector('#markers-table tbody');
+  if (markersData.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-state">אין נקודות עניין עדיין.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = markersData.map(m => `
+    <tr>
+      <td>${m.date}</td>
+      <td>${m.time}</td>
+      <td>${m.label}</td>
+      <td><button class="edit-btn" onclick="openEditMarkerModal(${m.id})">✎</button></td>
+      <td><button class="delete-btn" onclick="deleteMarkerFromLog(${m.id})">✕</button></td>
+    </tr>
+  `).join('');
+}
+
+function openEditMarkerModal(id) {
+  const m = markersData.find(m => m.id === id);
+  if (!m) return;
+  document.getElementById('edit-marker-id').value = m.id;
+  document.getElementById('edit-marker-date').value = m.date;
+  document.getElementById('edit-marker-time').value = m.time;
+  document.getElementById('edit-marker-label').value = m.label;
+  document.getElementById('edit-marker-modal').style.display = 'flex';
+}
+
+function closeEditMarkerModal() {
+  document.getElementById('edit-marker-modal').style.display = 'none';
+}
+
+async function saveMarkerEdit() {
+  const id = Number(document.getElementById('edit-marker-id').value);
+  const body = {
+    date:  document.getElementById('edit-marker-date').value,
+    time:  document.getElementById('edit-marker-time').value,
+    label: document.getElementById('edit-marker-label').value.trim(),
+  };
+  if (!body.date || !body.time || !body.label) return;
+  const res = await apiFetch(`/api/markers/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...sessionHeaders() },
+    body: JSON.stringify(body),
+  });
+  if (!res) return;
+  closeEditMarkerModal();
+  loadMarkers();
+}
+
+async function deleteMarkerFromLog(id) {
+  const res = await apiFetch(`/api/markers/${id}`, { method: 'DELETE', headers: sessionHeaders() });
+  if (!res) return;
+  loadMarkers();
+}
+
+document.getElementById('edit-marker-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('edit-marker-modal')) closeEditMarkerModal();
+});
 
 // ── Feedings ──────────────────────────────────────────────────────────────────
 

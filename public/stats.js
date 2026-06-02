@@ -107,10 +107,52 @@ function renderMarkersList() {
   container.innerHTML = allMarkers.map(m => `
     <div class="marker-item">
       <span>${m.date} ${m.time} — ${m.label}</span>
-      <button class="delete-btn" onclick="deleteMarker(${m.id})">✕</button>
+      <div style="display:flex;gap:4px">
+        <button class="edit-btn" onclick="openEditMarkerModal(${m.id})">✎</button>
+        <button class="delete-btn" onclick="deleteMarker(${m.id})">✕</button>
+      </div>
     </div>
   `).join('');
 }
+
+function openEditMarkerModal(id) {
+  const m = allMarkers.find(m => m.id === id);
+  if (!m) return;
+  document.getElementById('edit-marker-id').value = m.id;
+  document.getElementById('edit-marker-date').value = m.date;
+  document.getElementById('edit-marker-time').value = m.time;
+  document.getElementById('edit-marker-label').value = m.label;
+  document.getElementById('edit-marker-modal').style.display = 'flex';
+}
+
+function closeEditMarkerModal() {
+  document.getElementById('edit-marker-modal').style.display = 'none';
+}
+
+async function saveMarkerEdit() {
+  const id = Number(document.getElementById('edit-marker-id').value);
+  const body = {
+    date:  document.getElementById('edit-marker-date').value,
+    time:  document.getElementById('edit-marker-time').value,
+    label: document.getElementById('edit-marker-label').value.trim(),
+  };
+  if (!body.date || !body.time || !body.label) return;
+  const res = await fetch(`/api/markers/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...sessionHeaders() },
+    body: JSON.stringify(body),
+  });
+  if (res.status === 401) { logout(); return; }
+  closeEditMarkerModal();
+  allMarkers = await fetchMarkers();
+  renderMarkersList();
+  updateMarkerSelects();
+  updateChart();
+}
+
+document.getElementById('edit-marker-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('edit-marker-modal')) closeEditMarkerModal();
+});
 
 function updateMarkerSelects() {
   const fromSel = document.getElementById('filter-from-marker');
