@@ -226,7 +226,7 @@ app.get('/report', async (req, res) => {
       <table>
         <thead><tr><th>שעה</th><th>אכל מהבקבוק</th><th>נוסף להאכלה</th></tr></thead>
         <tbody>
-          ${grouped[date].map(f => `
+          ${grouped[date].sort((a, b) => b.time.localeCompare(a.time)).map(f => `
             <tr>
               <td>${f.time}</td>
               <td>${f.amount_eaten} ml</td>
