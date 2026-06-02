@@ -110,7 +110,7 @@ function updateChart() {
       options: {
         ...chartDefaults,
         scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, max: getYMax(eatenValues) } },
-        plugins: { ...chartDefaults.plugins, title: { display: true, text: 'כמות שאכל לפי האכלה' } }
+        plugins: { ...chartDefaults.plugins, title: { display: true, text: 'כמות אכילה' } }
       }
     });
 
@@ -136,7 +136,7 @@ function updateChart() {
       options: {
         ...chartDefaults,
         scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, max: getYMax(dailyValues) } },
-        plugins: { ...chartDefaults.plugins, title: { display: true, text: 'סה"כ אכל ביום' } }
+        plugins: { ...chartDefaults.plugins, title: { display: true, text: 'סה"כ יומי' } }
       }
     });
 
@@ -176,7 +176,7 @@ function updateChart() {
       options: {
         ...chartDefaults,
         scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, max: getYMax(ateAddedValues) } },
-        plugins: { ...chartDefaults.plugins, title: { display: true, text: 'אכל מול הוספה ביום' } }
+        plugins: { ...chartDefaults.plugins, title: { display: true, text: 'אכילה מול הוספה לפי יום' } }
       }
     });
   }
