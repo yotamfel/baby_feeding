@@ -288,7 +288,9 @@ function getTeaspoons(feeding) {
 }
 
 function calcCalories(feeding) {
-  return Number(feeding.amount_eaten) * 0.8 + getTeaspoons(feeding) * 4.8;
+  const total = Number(feeding.amount_eaten) + Number(feeding.amount_added);
+  const ratio = total > 0 ? Number(feeding.amount_eaten) / total : 0;
+  return Number(feeding.amount_eaten) * 0.8 + getTeaspoons(feeding) * 4.8 * ratio;
 }
 
 function findNearestLabel(marker, feedingData) {
