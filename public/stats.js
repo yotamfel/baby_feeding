@@ -457,7 +457,7 @@ function updateChart() {
           y: {
             min: 0,
             max: getYMaxCalories(calValues),
-            ticks: { stepSize: 50 },
+            ticks: { stepSize: 10 },
             title: { display: true, text: 'קלוריות' }
           }
         },
