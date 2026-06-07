@@ -194,9 +194,9 @@ function renderTable() {
   `).join('');
 
   document.getElementById('pagination').innerHTML = totalPages <= 1 ? '' : `
-    <button class="page-btn" ${currentPage === totalPages ? 'disabled' : ''} onclick="goToPage(${currentPage + 1})">הקודם</button>
-    <span class="page-info">עמוד ${currentPage} מתוך ${totalPages}</span>
     <button class="page-btn" ${currentPage === 1 ? 'disabled' : ''} onclick="goToPage(${currentPage - 1})">הבא</button>
+    <span class="page-info">עמוד ${currentPage} מתוך ${totalPages}</span>
+    <button class="page-btn" ${currentPage === totalPages ? 'disabled' : ''} onclick="goToPage(${currentPage + 1})">הקודם</button>
   `;
 }
 
