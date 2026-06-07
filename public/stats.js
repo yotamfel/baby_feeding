@@ -22,6 +22,7 @@ function sessionHeaders() {
 
 let allFeedings = [];
 let allMarkers = [];
+let allTeaspoonSettings = [];
 let chart = null;
 
 async function fetchFeedings() {
@@ -32,6 +33,12 @@ async function fetchFeedings() {
 
 async function fetchMarkers() {
   const res = await fetch('/api/markers', { headers: sessionHeaders() });
+  if (res.status === 401) { logout(); return []; }
+  return await res.json();
+}
+
+async function fetchTeaspoonSettings() {
+  const res = await fetch('/api/teaspoon-settings', { headers: sessionHeaders() });
   if (res.status === 401) { logout(); return []; }
   return await res.json();
 }
@@ -66,6 +73,90 @@ function setAllTime() {
   document.getElementById('filter-to-marker').value = '';
   updateChart();
 }
+
+// ── Teaspoon settings UI ─────────────────────────────────────────────────────
+
+async function addTeaspoonSetting() {
+  const date     = document.getElementById('teaspoon-date').value;
+  const time     = document.getElementById('teaspoon-time').value;
+  const teaspoons = document.getElementById('teaspoon-count').value;
+  if (!date || !time || teaspoons === '') return;
+  const res = await fetch('/api/teaspoon-settings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...sessionHeaders() },
+    body: JSON.stringify({ date, time, teaspoons: Number(teaspoons) }),
+  });
+  if (res.status === 401) { logout(); return; }
+  document.getElementById('teaspoon-date').value  = '';
+  document.getElementById('teaspoon-time').value  = '';
+  document.getElementById('teaspoon-count').value = '';
+  allTeaspoonSettings = await fetchTeaspoonSettings();
+  renderTeaspoonSettingsList();
+  updateChart();
+}
+
+async function deleteTeaspoonSetting(id) {
+  const res = await fetch(`/api/teaspoon-settings/${id}`, { method: 'DELETE', headers: sessionHeaders() });
+  if (res.status === 401) { logout(); return; }
+  allTeaspoonSettings = await fetchTeaspoonSettings();
+  renderTeaspoonSettingsList();
+  updateChart();
+}
+
+function renderTeaspoonSettingsList() {
+  const container = document.getElementById('teaspoon-settings-list');
+  if (allTeaspoonSettings.length === 0) {
+    container.innerHTML = '<p class="markers-empty">אין הגדרות עדיין.</p>';
+    return;
+  }
+  container.innerHTML = allTeaspoonSettings.map(s => `
+    <div class="marker-item">
+      <span>${s.date} ${s.time} — ${s.teaspoons} כפיות</span>
+      <div style="display:flex;gap:4px">
+        <button class="edit-btn" onclick="openEditTeaspoonModal(${s.id})">✎</button>
+        <button class="delete-btn" onclick="deleteTeaspoonSetting(${s.id})">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openEditTeaspoonModal(id) {
+  const s = allTeaspoonSettings.find(s => s.id === id);
+  if (!s) return;
+  document.getElementById('edit-teaspoon-id').value    = s.id;
+  document.getElementById('edit-teaspoon-date').value  = s.date;
+  document.getElementById('edit-teaspoon-time').value  = s.time;
+  document.getElementById('edit-teaspoon-count').value = s.teaspoons;
+  document.getElementById('edit-teaspoon-modal').style.display = 'flex';
+}
+
+function closeEditTeaspoonModal() {
+  document.getElementById('edit-teaspoon-modal').style.display = 'none';
+}
+
+async function saveTeaspoonEdit() {
+  const id = Number(document.getElementById('edit-teaspoon-id').value);
+  const body = {
+    date:      document.getElementById('edit-teaspoon-date').value,
+    time:      document.getElementById('edit-teaspoon-time').value,
+    teaspoons: Number(document.getElementById('edit-teaspoon-count').value),
+  };
+  if (!body.date || !body.time || isNaN(body.teaspoons)) return;
+  const res = await fetch(`/api/teaspoon-settings/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...sessionHeaders() },
+    body: JSON.stringify(body),
+  });
+  if (res.status === 401) { logout(); return; }
+  closeEditTeaspoonModal();
+  allTeaspoonSettings = await fetchTeaspoonSettings();
+  renderTeaspoonSettingsList();
+  updateChart();
+}
+
+document.getElementById('edit-teaspoon-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('edit-teaspoon-modal')) closeEditTeaspoonModal();
+});
 
 // ── Markers UI ────────────────────────────────────────────────────────────────
 
@@ -178,9 +269,26 @@ function formatDate(d) {
   return new Date(y, m - 1, day).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-function getYMax(values) {
+function getYMax(values, minVal = 180) {
   const dataMax = Math.max(...values, 0);
-  return Math.ceil(Math.max(180, dataMax + 1) / 10) * 10;
+  return Math.ceil(Math.max(minVal, dataMax + 1) / 10) * 10;
+}
+
+function getYMaxCalories(values) {
+  const dataMax = Math.max(...values, 0);
+  return Math.ceil((dataMax + 1) / 50) * 50;
+}
+
+function getTeaspoons(feeding) {
+  const fDT = feeding.date + feeding.time;
+  const applicable = allTeaspoonSettings
+    .filter(s => (s.date + s.time) <= fDT)
+    .sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
+  return applicable.length > 0 ? Number(applicable[0].teaspoons) : 0;
+}
+
+function calcCalories(feeding) {
+  return Number(feeding.amount_eaten) * 0.8 + getTeaspoons(feeding) * 4.8;
 }
 
 function findNearestLabel(marker, feedingData) {
@@ -319,6 +427,48 @@ function updateChart() {
       }
     });
 
+  } else if (type === 'daily-calories') {
+    const daily = {};
+    for (const f of data) {
+      daily[f.date] = (daily[f.date] || 0) + calcCalories(f);
+    }
+    const sortedDays = Object.keys(daily).sort();
+    const labels = sortedDays.map(formatDate);
+    const calValues = sortedDays.map(d => Math.round(daily[d] * 10) / 10);
+    chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          label: 'קלוריות',
+          data: calValues,
+          backgroundColor: PURPLE.bg,
+          borderColor: PURPLE.border,
+          borderWidth: 2,
+          tension: 0,
+          pointRadius: 5,
+          fill: false,
+        }]
+      },
+      options: {
+        ...chartDefaults,
+        scales: {
+          ...chartDefaults.scales,
+          y: {
+            min: 0,
+            max: getYMaxCalories(calValues),
+            ticks: { stepSize: 50 },
+            title: { display: true, text: 'קלוריות' }
+          }
+        },
+        plugins: {
+          ...chartDefaults.plugins,
+          legend: { display: false },
+          title: { display: true, text: 'מספר קלוריות יומי' }
+        }
+      }
+    });
+
   } else if (type === 'ate-vs-added') {
     const daily = {};
     for (const f of data) {
@@ -371,8 +521,9 @@ document.getElementById('filter-to-marker').addEventListener('change', updateCha
 
 fetchFeedings().then(async data => {
   allFeedings = data;
-  allMarkers = await fetchMarkers();
+  [allMarkers, allTeaspoonSettings] = await Promise.all([fetchMarkers(), fetchTeaspoonSettings()]);
   renderMarkersList();
   updateMarkerSelects();
+  renderTeaspoonSettingsList();
   updateChart();
 });

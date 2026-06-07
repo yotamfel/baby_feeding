@@ -13,6 +13,23 @@
 </head>
 <body>
 
+  <!-- Edit teaspoon modal -->
+  <div id="edit-teaspoon-modal" class="edit-overlay">
+    <div class="edit-card">
+      <h2>עריכת הגדרת כפיות</h2>
+      <input type="hidden" id="edit-teaspoon-id" />
+      <div class="form-row">
+        <label>תאריך<input type="date" id="edit-teaspoon-date" required /></label>
+        <label>שעה<input type="time" id="edit-teaspoon-time" required /></label>
+        <label>מספר כפיות<input type="number" id="edit-teaspoon-count" min="0" step="0.5" /></label>
+      </div>
+      <div class="edit-actions">
+        <button class="btn btn-cancel" onclick="closeEditTeaspoonModal()">ביטול</button>
+        <button class="btn btn-primary" onclick="saveTeaspoonEdit()">שמור</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Edit marker modal -->
   <div id="edit-marker-modal" class="edit-overlay">
     <div class="edit-card">
@@ -54,6 +71,7 @@
             <option value="per-feeding">כמות אכילה</option>
             <option value="daily-total">סה"כ יומי</option>
             <option value="ate-vs-added">אכילה מול הוספה לפי יום</option>
+            <option value="daily-calories">מספר קלוריות יומי</option>
           </select>
         </label>
         <label>מ-<input type="date" id="stats-from" /></label>
@@ -71,6 +89,20 @@
     <div class="card chart-card">
       <div id="no-data" class="empty-state" style="display:none">לא נמצאו רשומות בטווח זה.</div>
       <canvas id="feeding-chart"></canvas>
+    </div>
+
+    <div class="card">
+      <h2>הגדרת כפיות קלוריות</h2>
+      <p class="markers-empty" style="margin-bottom:14px">כל ארוחה שמגיעה אחרי הגדרה מסוימת תשתמש במספר הכפיות שהוגדר.</p>
+      <div class="form-row">
+        <label>תאריך<input type="date" id="teaspoon-date" /></label>
+        <label>שעה<input type="time" id="teaspoon-time" /></label>
+        <label>מספר כפיות<input type="number" id="teaspoon-count" min="0" step="0.5" placeholder="0" /></label>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" onclick="addTeaspoonSetting()">הוסף הגדרה</button>
+      </div>
+      <div id="teaspoon-settings-list"></div>
     </div>
 
     <div class="card">

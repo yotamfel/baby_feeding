@@ -12,6 +12,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 const DATA_FILE = path.join(__dirname, 'feedings.json');
 const SESSIONS_FILE = path.join(__dirname, 'sessions.json');
 const MARKERS_FILE = path.join(__dirname, 'markers.json');
+const TEASPOONS_FILE = path.join(__dirname, 'teaspoons.json');
 let pg = null;
 
 function hashPassword(password, salt) {
@@ -49,6 +50,15 @@ async function initStorage() {
         date TEXT NOT NULL,
         time TEXT NOT NULL,
         label TEXT NOT NULL
+      )
+    `);
+    await pg.query(`
+      CREATE TABLE IF NOT EXISTS teaspoon_settings (
+        id BIGINT PRIMARY KEY,
+        session_id TEXT NOT NULL,
+        date TEXT NOT NULL,
+        time TEXT NOT NULL,
+        teaspoons REAL NOT NULL
       )
     `);
     console.log('Using PostgreSQL');
@@ -181,6 +191,61 @@ async function removeMarker(id, sessionName) {
   ));
 }
 
+// Teaspoon settings
+async function getAllTeaspoonSettings(sessionName) {
+  if (pg) {
+    const { rows } = await pg.query(
+      'SELECT * FROM teaspoon_settings WHERE session_id = $1 ORDER BY date ASC, time ASC',
+      [sessionName]
+    );
+    return rows;
+  }
+  const all = fs.existsSync(TEASPOONS_FILE) ? JSON.parse(fs.readFileSync(TEASPOONS_FILE, 'utf8')) : [];
+  return all
+    .filter(s => s.session_id === sessionName)
+    .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+}
+
+async function insertTeaspoonSetting(setting) {
+  if (pg) {
+    await pg.query(
+      'INSERT INTO teaspoon_settings (id, session_id, date, time, teaspoons) VALUES ($1, $2, $3, $4, $5)',
+      [setting.id, setting.session_id, setting.date, setting.time, setting.teaspoons]
+    );
+    return;
+  }
+  const data = fs.existsSync(TEASPOONS_FILE) ? JSON.parse(fs.readFileSync(TEASPOONS_FILE, 'utf8')) : [];
+  data.push(setting);
+  fs.writeFileSync(TEASPOONS_FILE, JSON.stringify(data, null, 2));
+}
+
+async function removeTeaspoonSetting(id, sessionName) {
+  if (pg) {
+    await pg.query('DELETE FROM teaspoon_settings WHERE id = $1 AND session_id = $2', [id, sessionName]);
+    return;
+  }
+  const data = fs.existsSync(TEASPOONS_FILE) ? JSON.parse(fs.readFileSync(TEASPOONS_FILE, 'utf8')) : [];
+  fs.writeFileSync(TEASPOONS_FILE, JSON.stringify(
+    data.filter(s => !(s.id === id && s.session_id === sessionName)),
+    null, 2
+  ));
+}
+
+async function updateTeaspoonSetting(id, sessionName, fields) {
+  const { date, time, teaspoons } = fields;
+  if (pg) {
+    await pg.query(
+      'UPDATE teaspoon_settings SET date=$1, time=$2, teaspoons=$3 WHERE id=$4 AND session_id=$5',
+      [date, time, teaspoons, id, sessionName]
+    );
+    return;
+  }
+  const data = fs.existsSync(TEASPOONS_FILE) ? JSON.parse(fs.readFileSync(TEASPOONS_FILE, 'utf8')) : [];
+  const idx = data.findIndex(s => s.id === id && s.session_id === sessionName);
+  if (idx !== -1) data[idx] = { ...data[idx], date, time, teaspoons };
+  fs.writeFileSync(TEASPOONS_FILE, JSON.stringify(data, null, 2));
+}
+
 async function updateMarker(id, sessionName, fields) {
   const { date, time, label } = fields;
   if (pg) {
@@ -256,6 +321,30 @@ app.put('/api/feedings/:id', requireSession, async (req, res) => {
     return res.status(400).json({ error: 'All fields are required' });
   }
   await update(Number(req.params.id), req.sessionName, { date, time, amount_eaten, amount_added, notes });
+  res.json({ ok: true });
+});
+
+app.get('/api/teaspoon-settings', requireSession, async (req, res) => {
+  res.json(await getAllTeaspoonSettings(req.sessionName));
+});
+
+app.post('/api/teaspoon-settings', requireSession, async (req, res) => {
+  const { date, time, teaspoons } = req.body;
+  if (!date || !time || teaspoons == null) return res.status(400).json({ error: 'כל השדות הם חובה' });
+  const setting = { id: Date.now(), session_id: req.sessionName, date, time, teaspoons: Number(teaspoons) };
+  await insertTeaspoonSetting(setting);
+  res.json({ id: setting.id });
+});
+
+app.delete('/api/teaspoon-settings/:id', requireSession, async (req, res) => {
+  await removeTeaspoonSetting(Number(req.params.id), req.sessionName);
+  res.json({ ok: true });
+});
+
+app.put('/api/teaspoon-settings/:id', requireSession, async (req, res) => {
+  const { date, time, teaspoons } = req.body;
+  if (!date || !time || teaspoons == null) return res.status(400).json({ error: 'כל השדות הם חובה' });
+  await updateTeaspoonSetting(Number(req.params.id), req.sessionName, { date, time, teaspoons: Number(teaspoons) });
   res.json({ ok: true });
 });
 
