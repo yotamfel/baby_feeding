@@ -272,6 +272,20 @@ function formatDate(d) {
   return new Date(y, m - 1, day).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
+function hasTimeFilter() {
+  const from = document.getElementById('stats-from').value;
+  const to   = document.getElementById('stats-to').value;
+  return (from && from.length > 10) || (to && to.length > 10);
+}
+
+function dailyLabel(day, feedings) {
+  if (!hasTimeFilter()) return formatDate(day);
+  const times = feedings.map(f => f.time.substring(0, 5)).sort();
+  if (times.length === 0) return formatDate(day);
+  const first = times[0], last = times[times.length - 1];
+  return `${formatDate(day)} ${first === last ? first : first + '-' + last}`;
+}
+
 function getYMax(values, minVal = 180) {
   const dataMax = Math.max(...values, 0);
   return Math.ceil(Math.max(minVal, dataMax + 1) / 10) * 10;
@@ -311,6 +325,7 @@ function findNearestLabel(marker, feedingData) {
 const chartDefaults = {
   responsive: true,
   maintainAspectRatio: false,
+  layout: { padding: { left: 20, top: 20 } },
   plugins: { legend: { position: 'top' } },
   scales: {
     x: { ticks: { maxRotation: 45, minRotation: 30 } },
@@ -407,9 +422,13 @@ function updateChart() {
 
   } else if (type === 'daily-total') {
     const daily = {};
-    for (const f of data) daily[f.date] = (daily[f.date] || 0) + Number(f.amount_eaten);
+    const fpd1 = {};
+    for (const f of data) {
+      daily[f.date] = (daily[f.date] || 0) + Number(f.amount_eaten);
+      (fpd1[f.date] = fpd1[f.date] || []).push(f);
+    }
     const sortedDays = Object.keys(daily).sort();
-    const labels = sortedDays.map(formatDate);
+    const labels = sortedDays.map(d => dailyLabel(d, fpd1[d] || []));
     const dailyValues = sortedDays.map(d => daily[d]);
     chart = new Chart(ctx, {
       type: 'line',
@@ -435,11 +454,13 @@ function updateChart() {
 
   } else if (type === 'daily-calories') {
     const daily = {};
+    const fpd2 = {};
     for (const f of data) {
       daily[f.date] = (daily[f.date] || 0) + calcCalories(f);
+      (fpd2[f.date] = fpd2[f.date] || []).push(f);
     }
     const sortedDays = Object.keys(daily).sort();
-    const labels = sortedDays.map(formatDate);
+    const labels = sortedDays.map(d => dailyLabel(d, fpd2[d] || []));
     const calValues = sortedDays.map(d => Math.round(daily[d] * 10) / 10);
     chart = new Chart(ctx, {
       type: 'line',
@@ -478,13 +499,15 @@ function updateChart() {
 
   } else if (type === 'ate-vs-added') {
     const daily = {};
+    const fpd3 = {};
     for (const f of data) {
       if (!daily[f.date]) daily[f.date] = { ate: 0, added: 0 };
       daily[f.date].ate   += Number(f.amount_eaten);
       daily[f.date].added += Number(f.amount_added);
+      (fpd3[f.date] = fpd3[f.date] || []).push(f);
     }
     const sortedDates = Object.keys(daily).sort();
-    const labels = sortedDates.map(formatDate);
+    const labels = sortedDates.map(d => dailyLabel(d, fpd3[d] || []));
     const ateAddedValues = sortedDates.flatMap(d => [daily[d].ate, daily[d].added]);
     chart = new Chart(ctx, {
       type: 'bar',
