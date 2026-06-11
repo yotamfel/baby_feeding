@@ -325,7 +325,7 @@ function findNearestLabel(marker, feedingData) {
 const chartDefaults = {
   responsive: true,
   maintainAspectRatio: false,
-  layout: { padding: { left: 20, top: 20 } },
+  layout: { padding: { right: 30, top: 20 } },
   plugins: { legend: { position: 'top' } },
   scales: {
     x: { ticks: { maxRotation: 45, minRotation: 30 } },
@@ -448,7 +448,7 @@ function updateChart() {
       options: {
         ...chartDefaults,
         scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, max: getYMax(dailyValues) } },
-        plugins: { ...chartDefaults.plugins, legend: { display: false }, title: { display: true, text: 'סה"כ יומי' }, datalabels: { anchor: 'end', align: 'top', font: { size: 10 } } }
+        plugins: { ...chartDefaults.plugins, legend: { display: false }, title: { display: true, text: 'סה"כ יומי' }, datalabels: { anchor: 'end', align: 'right', offset: 4, font: { size: 10 } } }
       }
     });
 
@@ -492,7 +492,7 @@ function updateChart() {
           ...chartDefaults.plugins,
           legend: { display: false },
           title: { display: true, text: 'מספר קלוריות יומי' },
-          datalabels: { anchor: 'end', align: 'top', font: { size: 10 } },
+          datalabels: { anchor: 'end', align: 'right', offset: 4, font: { size: 10 } },
         }
       }
     });
@@ -535,7 +535,7 @@ function updateChart() {
       options: {
         ...chartDefaults,
         scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, max: getYMax(ateAddedValues) } },
-        plugins: { ...chartDefaults.plugins, title: { display: true, text: 'אכילה מול הוספה לפי יום' }, datalabels: { anchor: 'end', align: 'top', font: { size: 10 } } }
+        plugins: { ...chartDefaults.plugins, title: { display: true, text: 'אכילה מול הוספה לפי יום' }, datalabels: { anchor: 'end', align: 'right', offset: 4, font: { size: 10 } } }
       }
     });
   }
