@@ -46,8 +46,9 @@ async function fetchTeaspoonSettings() {
 function getFiltered() {
   const from = document.getElementById('stats-from').value;
   const to   = document.getElementById('stats-to').value;
+  const fDT  = f => (f.date + 'T' + f.time).substring(0, 16);
   return allFeedings
-    .filter(f => (!from || f.date >= from) && (!to || f.date <= to))
+    .filter(f => (!from || fDT(f) >= from) && (!to || fDT(f) <= to))
     .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
 }
 
@@ -397,6 +398,7 @@ function updateChart() {
           legend: { display: false },
           title: { display: true, text: 'כמות אכילה' },
           annotation: { annotations },
+          datalabels: { display: false },
         }
       }
     });
@@ -425,7 +427,7 @@ function updateChart() {
       options: {
         ...chartDefaults,
         scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, max: getYMax(dailyValues) } },
-        plugins: { ...chartDefaults.plugins, legend: { display: false }, title: { display: true, text: 'סה"כ יומי' } }
+        plugins: { ...chartDefaults.plugins, legend: { display: false }, title: { display: true, text: 'סה"כ יומי' }, datalabels: { anchor: 'end', align: 'top', font: { size: 10 } } }
       }
     });
 
@@ -466,7 +468,8 @@ function updateChart() {
         plugins: {
           ...chartDefaults.plugins,
           legend: { display: false },
-          title: { display: true, text: 'מספר קלוריות יומי' }
+          title: { display: true, text: 'מספר קלוריות יומי' },
+          datalabels: { anchor: 'end', align: 'top', font: { size: 10 } },
         }
       }
     });
@@ -507,7 +510,7 @@ function updateChart() {
       options: {
         ...chartDefaults,
         scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, max: getYMax(ateAddedValues) } },
-        plugins: { ...chartDefaults.plugins, title: { display: true, text: 'אכילה מול הוספה לפי יום' } }
+        plugins: { ...chartDefaults.plugins, title: { display: true, text: 'אכילה מול הוספה לפי יום' }, datalabels: { anchor: 'end', align: 'top', font: { size: 10 } } }
       }
     });
   }

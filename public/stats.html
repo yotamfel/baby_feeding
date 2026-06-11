@@ -74,8 +74,8 @@
             <option value="daily-calories">מספר קלוריות יומי</option>
           </select>
         </label>
-        <label>מ-<input type="date" id="stats-from" /></label>
-        <label>עד<input type="date" id="stats-to" /></label>
+        <label>מ-<input type="datetime-local" id="stats-from" /></label>
+        <label>עד<input type="datetime-local" id="stats-to" /></label>
         <label>מ-נקודה
           <select id="filter-from-marker"><option value="">ללא</option></select>
         </label>
@@ -122,6 +122,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
   <script src="stats.js"></script>
 </body>
 </html>
