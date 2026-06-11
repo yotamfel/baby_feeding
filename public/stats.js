@@ -20,6 +20,8 @@ function sessionHeaders() {
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 
+Chart.register(ChartDataLabels);
+
 let allFeedings = [];
 let allMarkers = [];
 let allTeaspoonSettings = [];
