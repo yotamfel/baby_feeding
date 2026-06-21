@@ -13,6 +13,7 @@ const DATA_FILE = path.join(__dirname, 'feedings.json');
 const SESSIONS_FILE = path.join(__dirname, 'sessions.json');
 const MARKERS_FILE = path.join(__dirname, 'markers.json');
 const TEASPOONS_FILE = path.join(__dirname, 'teaspoons.json');
+const CONCENTRATION_FILE = path.join(__dirname, 'concentration.json');
 let pg = null;
 
 function hashPassword(password, salt) {
@@ -59,6 +60,15 @@ async function initStorage() {
         date TEXT NOT NULL,
         time TEXT NOT NULL,
         teaspoons REAL NOT NULL
+      )
+    `);
+    await pg.query(`
+      CREATE TABLE IF NOT EXISTS concentration_settings (
+        id BIGINT PRIMARY KEY,
+        session_id TEXT NOT NULL,
+        date TEXT NOT NULL,
+        time TEXT NOT NULL,
+        concentration REAL NOT NULL
       )
     `);
     console.log('Using PostgreSQL');
@@ -246,6 +256,61 @@ async function updateTeaspoonSetting(id, sessionName, fields) {
   fs.writeFileSync(TEASPOONS_FILE, JSON.stringify(data, null, 2));
 }
 
+// Concentration settings
+async function getAllConcentrationSettings(sessionName) {
+  if (pg) {
+    const { rows } = await pg.query(
+      'SELECT * FROM concentration_settings WHERE session_id = $1 ORDER BY date ASC, time ASC',
+      [sessionName]
+    );
+    return rows;
+  }
+  const all = fs.existsSync(CONCENTRATION_FILE) ? JSON.parse(fs.readFileSync(CONCENTRATION_FILE, 'utf8')) : [];
+  return all
+    .filter(s => s.session_id === sessionName)
+    .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+}
+
+async function insertConcentrationSetting(setting) {
+  if (pg) {
+    await pg.query(
+      'INSERT INTO concentration_settings (id, session_id, date, time, concentration) VALUES ($1, $2, $3, $4, $5)',
+      [setting.id, setting.session_id, setting.date, setting.time, setting.concentration]
+    );
+    return;
+  }
+  const data = fs.existsSync(CONCENTRATION_FILE) ? JSON.parse(fs.readFileSync(CONCENTRATION_FILE, 'utf8')) : [];
+  data.push(setting);
+  fs.writeFileSync(CONCENTRATION_FILE, JSON.stringify(data, null, 2));
+}
+
+async function removeConcentrationSetting(id, sessionName) {
+  if (pg) {
+    await pg.query('DELETE FROM concentration_settings WHERE id = $1 AND session_id = $2', [id, sessionName]);
+    return;
+  }
+  const data = fs.existsSync(CONCENTRATION_FILE) ? JSON.parse(fs.readFileSync(CONCENTRATION_FILE, 'utf8')) : [];
+  fs.writeFileSync(CONCENTRATION_FILE, JSON.stringify(
+    data.filter(s => !(s.id === id && s.session_id === sessionName)),
+    null, 2
+  ));
+}
+
+async function updateConcentrationSetting(id, sessionName, fields) {
+  const { date, time, concentration } = fields;
+  if (pg) {
+    await pg.query(
+      'UPDATE concentration_settings SET date=$1, time=$2, concentration=$3 WHERE id=$4 AND session_id=$5',
+      [date, time, concentration, id, sessionName]
+    );
+    return;
+  }
+  const data = fs.existsSync(CONCENTRATION_FILE) ? JSON.parse(fs.readFileSync(CONCENTRATION_FILE, 'utf8')) : [];
+  const idx = data.findIndex(s => s.id === id && s.session_id === sessionName);
+  if (idx !== -1) data[idx] = { ...data[idx], date, time, concentration };
+  fs.writeFileSync(CONCENTRATION_FILE, JSON.stringify(data, null, 2));
+}
+
 async function updateMarker(id, sessionName, fields) {
   const { date, time, label } = fields;
   if (pg) {
@@ -345,6 +410,30 @@ app.put('/api/teaspoon-settings/:id', requireSession, async (req, res) => {
   const { date, time, teaspoons } = req.body;
   if (!date || !time || teaspoons == null) return res.status(400).json({ error: 'כל השדות הם חובה' });
   await updateTeaspoonSetting(Number(req.params.id), req.sessionName, { date, time, teaspoons: Number(teaspoons) });
+  res.json({ ok: true });
+});
+
+app.get('/api/concentration-settings', requireSession, async (req, res) => {
+  res.json(await getAllConcentrationSettings(req.sessionName));
+});
+
+app.post('/api/concentration-settings', requireSession, async (req, res) => {
+  const { date, time, concentration } = req.body;
+  if (!date || !time || concentration == null) return res.status(400).json({ error: 'כל השדות הם חובה' });
+  const setting = { id: Date.now(), session_id: req.sessionName, date, time, concentration: Number(concentration) };
+  await insertConcentrationSetting(setting);
+  res.json({ id: setting.id });
+});
+
+app.delete('/api/concentration-settings/:id', requireSession, async (req, res) => {
+  await removeConcentrationSetting(Number(req.params.id), req.sessionName);
+  res.json({ ok: true });
+});
+
+app.put('/api/concentration-settings/:id', requireSession, async (req, res) => {
+  const { date, time, concentration } = req.body;
+  if (!date || !time || concentration == null) return res.status(400).json({ error: 'כל השדות הם חובה' });
+  await updateConcentrationSetting(Number(req.params.id), req.sessionName, { date, time, concentration: Number(concentration) });
   res.json({ ok: true });
 });
 

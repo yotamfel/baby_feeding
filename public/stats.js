@@ -25,6 +25,7 @@ Chart.register(ChartDataLabels);
 let allFeedings = [];
 let allMarkers = [];
 let allTeaspoonSettings = [];
+let allConcentrationSettings = [];
 let chart = null;
 
 async function fetchFeedings() {
@@ -41,6 +42,12 @@ async function fetchMarkers() {
 
 async function fetchTeaspoonSettings() {
   const res = await fetch('/api/teaspoon-settings', { headers: sessionHeaders() });
+  if (res.status === 401) { logout(); return []; }
+  return await res.json();
+}
+
+async function fetchConcentrationSettings() {
+  const res = await fetch('/api/concentration-settings', { headers: sessionHeaders() });
   if (res.status === 401) { logout(); return []; }
   return await res.json();
 }
@@ -159,6 +166,90 @@ async function saveTeaspoonEdit() {
 
 document.getElementById('edit-teaspoon-modal').addEventListener('click', e => {
   if (e.target === document.getElementById('edit-teaspoon-modal')) closeEditTeaspoonModal();
+});
+
+// ── Concentration settings UI ───────────────────────────────────────────────
+
+async function addConcentrationSetting() {
+  const date = document.getElementById('concentration-date').value;
+  const time = document.getElementById('concentration-time').value;
+  const concentration = document.getElementById('concentration-value').value;
+  if (!date || !time || concentration === '') return;
+  const res = await fetch('/api/concentration-settings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...sessionHeaders() },
+    body: JSON.stringify({ date, time, concentration: Number(concentration) }),
+  });
+  if (res.status === 401) { logout(); return; }
+  document.getElementById('concentration-date').value = '';
+  document.getElementById('concentration-time').value = '';
+  document.getElementById('concentration-value').value = '';
+  allConcentrationSettings = await fetchConcentrationSettings();
+  renderConcentrationSettingsList();
+  updateChart();
+}
+
+async function deleteConcentrationSetting(id) {
+  const res = await fetch(`/api/concentration-settings/${id}`, { method: 'DELETE', headers: sessionHeaders() });
+  if (res.status === 401) { logout(); return; }
+  allConcentrationSettings = await fetchConcentrationSettings();
+  renderConcentrationSettingsList();
+  updateChart();
+}
+
+function renderConcentrationSettingsList() {
+  const container = document.getElementById('concentration-settings-list');
+  if (allConcentrationSettings.length === 0) {
+    container.innerHTML = '<p class="markers-empty">אין הגדרות עדיין. ברירת מחדל: 0.8</p>';
+    return;
+  }
+  container.innerHTML = allConcentrationSettings.map(s => `
+    <div class="marker-item">
+      <span>${s.date} ${s.time} — ריכוז ${s.concentration}</span>
+      <div style="display:flex;gap:4px">
+        <button class="edit-btn" onclick="openEditConcentrationModal(${s.id})">✎</button>
+        <button class="delete-btn" onclick="deleteConcentrationSetting(${s.id})">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openEditConcentrationModal(id) {
+  const s = allConcentrationSettings.find(s => s.id === id);
+  if (!s) return;
+  document.getElementById('edit-concentration-id').value = s.id;
+  document.getElementById('edit-concentration-date').value = s.date;
+  document.getElementById('edit-concentration-time').value = s.time;
+  document.getElementById('edit-concentration-value').value = s.concentration;
+  document.getElementById('edit-concentration-modal').style.display = 'flex';
+}
+
+function closeEditConcentrationModal() {
+  document.getElementById('edit-concentration-modal').style.display = 'none';
+}
+
+async function saveConcentrationEdit() {
+  const id = Number(document.getElementById('edit-concentration-id').value);
+  const body = {
+    date: document.getElementById('edit-concentration-date').value,
+    time: document.getElementById('edit-concentration-time').value,
+    concentration: Number(document.getElementById('edit-concentration-value').value),
+  };
+  if (!body.date || !body.time || isNaN(body.concentration)) return;
+  const res = await fetch(`/api/concentration-settings/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...sessionHeaders() },
+    body: JSON.stringify(body),
+  });
+  if (res.status === 401) { logout(); return; }
+  closeEditConcentrationModal();
+  allConcentrationSettings = await fetchConcentrationSettings();
+  renderConcentrationSettingsList();
+  updateChart();
+}
+
+document.getElementById('edit-concentration-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('edit-concentration-modal')) closeEditConcentrationModal();
 });
 
 // ── Markers UI ────────────────────────────────────────────────────────────────
@@ -303,10 +394,18 @@ function getTeaspoons(feeding) {
   return applicable.length > 0 ? Number(applicable[0].teaspoons) : 0;
 }
 
+function getConcentration(feeding) {
+  const fDT = feeding.date + feeding.time;
+  const applicable = allConcentrationSettings
+    .filter(s => (s.date + s.time) <= fDT)
+    .sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
+  return applicable.length > 0 ? Number(applicable[0].concentration) : 0.8;
+}
+
 function calcCalories(feeding) {
   const total = Number(feeding.amount_eaten) + Number(feeding.amount_added);
   const ratio = total > 0 ? Number(feeding.amount_eaten) / total : 0;
-  return Number(feeding.amount_eaten) * 0.8 + getTeaspoons(feeding) * 3.8 * ratio;
+  return Number(feeding.amount_eaten) * getConcentration(feeding) + getTeaspoons(feeding) * 3.8 * ratio;
 }
 
 function findNearestLabel(marker, feedingData) {
@@ -544,9 +643,12 @@ document.getElementById('filter-to-marker').addEventListener('change', updateCha
 
 fetchFeedings().then(async data => {
   allFeedings = data;
-  [allMarkers, allTeaspoonSettings] = await Promise.all([fetchMarkers(), fetchTeaspoonSettings()]);
+  [allMarkers, allTeaspoonSettings, allConcentrationSettings] = await Promise.all([
+    fetchMarkers(), fetchTeaspoonSettings(), fetchConcentrationSettings()
+  ]);
   renderMarkersList();
   updateMarkerSelects();
   renderTeaspoonSettingsList();
+  renderConcentrationSettingsList();
   updateChart();
 });

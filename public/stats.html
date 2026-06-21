@@ -13,6 +13,23 @@
 </head>
 <body>
 
+  <!-- Edit concentration modal -->
+  <div id="edit-concentration-modal" class="edit-overlay">
+    <div class="edit-card">
+      <h2>עריכת ריכוז</h2>
+      <input type="hidden" id="edit-concentration-id" />
+      <div class="form-row">
+        <label>תאריך<input type="date" id="edit-concentration-date" required /></label>
+        <label>שעה<input type="time" id="edit-concentration-time" required /></label>
+        <label>ריכוז (קל/מ"ל)<input type="number" id="edit-concentration-value" min="0" step="0.01" /></label>
+      </div>
+      <div class="edit-actions">
+        <button class="btn btn-cancel" onclick="closeEditConcentrationModal()">ביטול</button>
+        <button class="btn btn-primary" onclick="saveConcentrationEdit()">שמור</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Edit teaspoon modal -->
   <div id="edit-teaspoon-modal" class="edit-overlay">
     <div class="edit-card">
@@ -103,6 +120,20 @@
         <button class="btn btn-primary" onclick="addTeaspoonSetting()">הוסף הגדרה</button>
       </div>
       <div id="teaspoon-settings-list"></div>
+    </div>
+
+    <div class="card">
+      <h2>הגדרת ריכוז (קל/מ"ל)</h2>
+      <p class="markers-empty" style="margin-bottom:14px">ריכוז ברירת מחדל: 0.8 (25 גרם חומר על 20 מ"ל מים). כל ארוחה שמגיעה אחרי הגדרה מסוימת תשתמש בריכוז שהוגדר.</p>
+      <div class="form-row">
+        <label>תאריך<input type="date" id="concentration-date" /></label>
+        <label>שעה<input type="time" id="concentration-time" /></label>
+        <label>ריכוז<input type="number" id="concentration-value" min="0" step="0.01" placeholder="0.8" /></label>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" onclick="addConcentrationSetting()">הוסף הגדרה</button>
+      </div>
+      <div id="concentration-settings-list"></div>
     </div>
 
     <div class="card">
