@@ -1,21 +1,32 @@
 const NAME_KEY = 'feedingSessionName';
 const PASS_KEY = 'feedingSessionPassword';
+const DEMO_MODE = localStorage.getItem('feedingDemoMode') === 'true';
 
 function getSessionName() { return localStorage.getItem(NAME_KEY); }
 function getSessionPassword() { return localStorage.getItem(PASS_KEY); }
 
 if (!getSessionName()) window.location.href = '/';
 
-document.getElementById('session-name-display').textContent = getSessionName();
+document.getElementById('session-name-display').textContent = getSessionName() + (DEMO_MODE ? ' (read-only)' : '');
 
 function logout() {
   localStorage.removeItem(NAME_KEY);
   localStorage.removeItem(PASS_KEY);
+  localStorage.removeItem('feedingDemoMode');
   window.location.href = '/';
 }
 
 function sessionHeaders() {
   return { 'x-session-id': getSessionName(), 'x-session-password': getSessionPassword() };
+}
+
+async function demoFetch(url, options = {}) {
+  if (DEMO_MODE) {
+    const method = (options.method || 'GET').toUpperCase();
+    if (method !== 'GET') return null;
+    return fetch(url.replace('/api/', '/api/demo/'));
+  }
+  return fetch(url, options);
 }
 
 // ── Data ──────────────────────────────────────────────────────────────────────
@@ -29,26 +40,26 @@ let allConcentrationSettings = [];
 let chart = null;
 
 async function fetchFeedings() {
-  const res = await fetch('/api/feedings', { headers: sessionHeaders() });
-  if (res.status === 401) { logout(); return []; }
+  const res = await demoFetch('/api/feedings', { headers: sessionHeaders() });
+  if (!res || res.status === 401) { if (!DEMO_MODE) logout(); return []; }
   return await res.json();
 }
 
 async function fetchMarkers() {
-  const res = await fetch('/api/markers', { headers: sessionHeaders() });
-  if (res.status === 401) { logout(); return []; }
+  const res = await demoFetch('/api/markers', { headers: sessionHeaders() });
+  if (!res || res.status === 401) { if (!DEMO_MODE) logout(); return []; }
   return await res.json();
 }
 
 async function fetchTeaspoonSettings() {
-  const res = await fetch('/api/teaspoon-settings', { headers: sessionHeaders() });
-  if (res.status === 401) { logout(); return []; }
+  const res = await demoFetch('/api/teaspoon-settings', { headers: sessionHeaders() });
+  if (!res || res.status === 401) { if (!DEMO_MODE) logout(); return []; }
   return await res.json();
 }
 
 async function fetchConcentrationSettings() {
-  const res = await fetch('/api/concentration-settings', { headers: sessionHeaders() });
-  if (res.status === 401) { logout(); return []; }
+  const res = await demoFetch('/api/concentration-settings', { headers: sessionHeaders() });
+  if (!res || res.status === 401) { if (!DEMO_MODE) logout(); return []; }
   return await res.json();
 }
 
@@ -651,4 +662,9 @@ fetchFeedings().then(async data => {
   renderTeaspoonSettingsList();
   renderConcentrationSettingsList();
   updateChart();
+
+  if (DEMO_MODE) {
+    document.querySelectorAll('.add-form, .btn-delete, .btn-edit, button[onclick*="add"], button[onclick*="delete"], button[onclick*="save"]')
+      .forEach(el => el.style.display = 'none');
+  }
 });
