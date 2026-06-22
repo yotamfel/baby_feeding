@@ -461,6 +461,42 @@ app.put('/api/markers/:id', requireSession, async (req, res) => {
   res.json({ ok: true });
 });
 
+// ── Demo (read-only) routes ──────────────────────────────────────────────────
+
+const DEMO_SESSION = process.env.DEMO_SESSION || '';
+
+app.get('/demo', (req, res) => {
+  if (!DEMO_SESSION) return res.status(404).send('Demo not configured');
+  res.send(`<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><meta http-equiv="refresh" content="0;url=/"></head>
+<body><script>
+  localStorage.setItem('feedingSessionName','${DEMO_SESSION}');
+  localStorage.setItem('feedingSessionPassword','__demo__');
+  localStorage.setItem('feedingDemoMode','true');
+  location.href='/';
+</script></body></html>`);
+});
+
+app.get('/api/demo/feedings', async (req, res) => {
+  if (!DEMO_SESSION) return res.status(404).json({ error: 'Demo not configured' });
+  res.json(await getAll(DEMO_SESSION));
+});
+
+app.get('/api/demo/markers', async (req, res) => {
+  if (!DEMO_SESSION) return res.status(404).json({ error: 'Demo not configured' });
+  res.json(await getAllMarkers(DEMO_SESSION));
+});
+
+app.get('/api/demo/teaspoon-settings', async (req, res) => {
+  if (!DEMO_SESSION) return res.status(404).json({ error: 'Demo not configured' });
+  res.json(await getAllTeaspoonSettings(DEMO_SESSION));
+});
+
+app.get('/api/demo/concentration-settings', async (req, res) => {
+  if (!DEMO_SESSION) return res.status(404).json({ error: 'Demo not configured' });
+  res.json(await getAllConcentrationSettings(DEMO_SESSION));
+});
+
 app.get('/report', async (req, res) => {
   const { name, password } = getCredentials(req);
   if (!name) return res.status(401).send('Unauthorized');

@@ -2,6 +2,7 @@
 
 const NAME_KEY = 'feedingSessionName';
 const PASS_KEY = 'feedingSessionPassword';
+const DEMO_MODE = localStorage.getItem('feedingDemoMode') === 'true';
 
 function getSessionName() { return localStorage.getItem(NAME_KEY); }
 function getSessionPassword() { return localStorage.getItem(PASS_KEY); }
@@ -14,6 +15,12 @@ function sessionHeaders() {
 }
 
 async function apiFetch(url, options = {}) {
+  if (DEMO_MODE) {
+    const method = (options.method || 'GET').toUpperCase();
+    if (method !== 'GET') return null;
+    const demoUrl = url.replace('/api/', '/api/demo/');
+    return fetch(demoUrl);
+  }
   const res = await fetch(url, options);
   if (res.status === 401) {
     logout();
@@ -52,17 +59,25 @@ async function startSession() {
 }
 
 function applySession(name) {
-  document.getElementById('session-name-display').textContent = name;
+  document.getElementById('session-name-display').textContent = DEMO_MODE ? name + ' (read-only)' : name;
   document.getElementById('session-modal').style.display = 'none';
   document.getElementById('session-bar').style.display = 'flex';
   document.getElementById('date').valueAsDate = new Date();
   loadFeedings();
   loadMarkers();
+
+  if (DEMO_MODE) {
+    document.querySelectorAll('.add-form, .btn-delete, .btn-edit, .edit-overlay, #add-marker-section, #add-teaspoon-section, #add-concentration-section, #export-section')
+      .forEach(el => el.style.display = 'none');
+    const form = document.querySelector('.card form');
+    if (form) form.style.display = 'none';
+  }
 }
 
 function logout() {
   localStorage.removeItem(NAME_KEY);
   localStorage.removeItem(PASS_KEY);
+  localStorage.removeItem('feedingDemoMode');
   document.getElementById('session-modal').style.display = 'flex';
   document.getElementById('session-bar').style.display = 'none';
   document.querySelector('#feedings-table tbody').innerHTML = '';
